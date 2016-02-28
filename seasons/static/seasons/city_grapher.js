@@ -26,7 +26,7 @@
         var svg = generateBlankSVG(width, height, margins);
 
         // Specify datafile path to read in
-        var dataFile = "static/cities.tsv";
+        var dataFile = "static/seasons/cities.tsv";
 
         convertDataToGraph(dataFile, svg, width, height);
 
