@@ -1,0 +1,52 @@
+<!-- Based on the D3 'Multi-Series Line Chart' sample code at http://bl.ocks.org/mbostock/3884955 -->
+
+{% load staticfiles %}
+
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+
+        <meta charset="utf-8">
+
+        <!-- THIS IS JUST TEMPORARY! I SWEAR! -->
+
+        <style>
+
+            body {
+                font: 10px sans-serif;
+            }
+
+            .axis path, .axis line {
+                fill: none;
+                stroke: #000;
+                shape-rendering: crispEdges;
+            }
+
+            .x.axis path {
+                display: none;
+            }
+
+            .line {
+                fill: none;
+                stroke: steelblue;
+                stroke-width: 1.5px;
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <h2>Fall 2011 - Fall 2012 Temperatures</h2>
+        <h3>New York City, San Francisco, and Austin</h3>
+
+    </body>
+
+</html>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+
+<script src="{% static 'city_grapher.js' %}"></script>
