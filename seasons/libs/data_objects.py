@@ -40,24 +40,23 @@ class DailyRecord(object):
         #printTeamStandings(teamRecordList)
 
         shoehornedTeams = self.__convertStructureForD3(dailyRecordList)        
+
+        for team in shoehornedTeams:
+            flag = 0
+            for counter, game in enumerate(team["values"]):
+                if game["total"] > 0: 
+                    flag = 1
+                if (flag == 1) and (game["total"] == 0):
+                    game["total"] = team["values"][counter-1]["total"]
+                    game["win"] = team["values"][counter-1]["win"]
+                    game["loss"] = team["values"][counter-1]["loss"]
+                    game["percentage"] = team["values"][counter-1]["percentage"]
+                    game["ranking"] = team["values"][counter-1]["ranking"]
+
         
         print "fsaffsfs"
         print shoehornedTeams[0]
-        # aaaa = self.__getAllGameDates(gameDetailsList)
-        # aaaa.reverse()
         
-        # for team in shoehornedTeams:
-        #     my_aaaa = copy.deepcopy(aaaa)
-        #     for testDate in my_aaaa:
-        #         matchingItems = filter(lambda x: x["date"] == testDate, team["values"])
-        #         if len(matchingItems) == 0:
-        #             my_aaaa[]
-
-
-
-        # for team in shoehornedTeams: 
-        #     teamDateArray = map(lambda x: x["date"], team["values"])
-
 
         return shoehornedTeams
 
@@ -161,13 +160,7 @@ class DailyRecord(object):
 
         dateString = datetime.fromtimestamp(mktime(date)).strftime("%Y%m%d")
         
-        # print dateString
-        # print team
-        # print dailyRecordList[0]["date"]
-
         recordsToUpdate = filter(lambda x: (x["date"] == dateString) and (x["team"] == team), dailyRecordList)
-
-        #print recordsToUpdate
 
         if len(recordsToUpdate) == 1:
             recordToUpdate = recordsToUpdate[0]
@@ -177,15 +170,6 @@ class DailyRecord(object):
             recordToUpdate["percentage"] = teamRecord["percentage"]
             recordToUpdate["ranking"] = teamRecord["ranking"]
 
-        # return {
-        #     "date": datetime.fromtimestamp(mktime(date)).strftime("%Y%m%d"),
-        #     "team": team,
-        #     "win": teamRecord["win"],
-        #     "loss": teamRecord["loss"],
-        #     "total": teamRecord["total"],
-        #     "percentage": teamRecord["percentage"],
-        #     "ranking": teamRecord["ranking"]
-        # }
 
 
     """
@@ -203,14 +187,11 @@ class DailyRecord(object):
 
         shoehornedTeams = []
 
-        print dailyRecordList
-
         combos = map(mapFunc, DailyRecord.teamList)
 
         for item in combos:
             stats = {"name": item[0], "values": item[1]}
             shoehornedTeams.append(stats)
-
 
         for team in shoehornedTeams:
             team["values"]

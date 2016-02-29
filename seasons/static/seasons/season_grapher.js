@@ -52,8 +52,6 @@
     // Converts date data into D3 date format
     function convertDateFormats(rawData) {
         
-        debugger;
-        
         var inFormat = "%Y%m%d";
 
         rawData.forEach(function(team) {
