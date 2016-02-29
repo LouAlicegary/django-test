@@ -52,6 +52,8 @@
     // Converts date data into D3 date format
     function convertDateFormats(rawData) {
         
+        debugger;
+        
         var inFormat = "%Y%m%d";
 
         rawData.forEach(function(team) {
@@ -103,19 +105,19 @@
 
             var minPct = d3.min(rawData, function(team) { 
                 return d3.min(team.values, function(v) { 
-                    return v.percentage; 
+                    return v.ranking; 
                 }); 
             });
 
             var maxPct = d3.max(rawData, function(team) { 
                 return d3.max(team.values, function(v) { 
-                    return v.percentage; 
+                    return v.ranking; 
                 }); 
             });
 
             var yScale = d3.scale.linear();
             yScale.domain([minPct, maxPct]);
-            yScale.range([height, 0]);
+            yScale.range([0, height]);
 
             return yScale;
             
@@ -186,7 +188,7 @@
 
                     // Set up Y value mapping function
                     function mapY(d) {
-                        return yScale(d.percentage); 
+                        return yScale(d.ranking); 
                     }
 
                 }
@@ -207,7 +209,7 @@
                 function drawLineLabels(lineElements, xScale, yScale) {
 
                     var lineTerminals = lineElements.datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; }).append("text");
-                    lineTerminals.attr("transform", function(d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.percentage) + ")"; });
+                    lineTerminals.attr("transform", function(d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.ranking) + ")"; });
                     lineTerminals.attr("x", 3).attr("dy", ".35em")
                     lineTerminals.text(function(d) { return d.name; });
 

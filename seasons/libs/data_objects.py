@@ -23,7 +23,8 @@ class DailyRecord(object):
             for item in sortedTuples:
                 print item[0], item[1]
 
-        dailyRecordList = []
+        dailyRecordList = self.__createStubbedDailyRecordList(gameDetailsList)
+        #dailyRecordList = []
 
         teamRecordList = self.__createEmptyRecordDict()
 
@@ -33,15 +34,49 @@ class DailyRecord(object):
             
             if winnerLoserDetails:
                 updatedWLRecords = self.__updateWLRecords(teamRecordList, winnerLoserDetails)
-                winnerRecord = self.__createDailyTeamRecord(winnerLoserDetails["date"], winnerLoserDetails["winner"], updatedWLRecords["winnerRecord"])
-                loserRecord = self.__createDailyTeamRecord(winnerLoserDetails["date"], winnerLoserDetails["loser"], updatedWLRecords["loserRecord"])
-                dailyRecordList.extend((winnerRecord, loserRecord))
+                self.__createDailyTeamRecord(dailyRecordList, winnerLoserDetails["date"], winnerLoserDetails["winner"], updatedWLRecords["winnerRecord"])
+                self.__createDailyTeamRecord(dailyRecordList, winnerLoserDetails["date"], winnerLoserDetails["loser"], updatedWLRecords["loserRecord"])
+                
+        #printTeamStandings(teamRecordList)
 
-        printTeamStandings(teamRecordList)
+        shoehornedTeams = self.__convertStructureForD3(dailyRecordList)        
+        
+        print "fsaffsfs"
+        print shoehornedTeams[0]
+        # aaaa = self.__getAllGameDates(gameDetailsList)
+        # aaaa.reverse()
+        
+        # for team in shoehornedTeams:
+        #     my_aaaa = copy.deepcopy(aaaa)
+        #     for testDate in my_aaaa:
+        #         matchingItems = filter(lambda x: x["date"] == testDate, team["values"])
+        #         if len(matchingItems) == 0:
+        #             my_aaaa[]
 
-        shoehornedTeams = self.__convertStructureForD3(dailyRecordList)
+
+
+        # for team in shoehornedTeams: 
+        #     teamDateArray = map(lambda x: x["date"], team["values"])
+
 
         return shoehornedTeams
+
+
+    """
+    Creates a dictionary to hold each team's running win/loss record
+    """
+    def __createStubbedDailyRecordList(self, gameDetailsList):
+
+        dailyRecordList = []
+
+        sortedDateSet = self.__getAllGameDates(gameDetailsList)
+
+        for date in sortedDateSet:
+            for team in DailyRecord.teamList:
+                dailyRecordList.append({"date": date, "team": team, "won": 0, "loss": 0, "total": 0, "percentage": 0.00, "ranking": 0})
+
+        return dailyRecordList
+
 
 
     """
@@ -52,7 +87,7 @@ class DailyRecord(object):
         recordDict = {}
         
         for team in DailyRecord.teamList:
-            recordDict[team] = {"win": 0, "loss": 0, "total": 0, "percentage": 0.00}
+            recordDict[team] = {"win": 0, "loss": 0, "total": 0, "percentage": 0.00, "ranking": 0}
 
         return recordDict
 
@@ -93,17 +128,25 @@ class DailyRecord(object):
     """
     Updates the win/loss record dict for the two teams that played
     """
-    def __updateWLRecords(self, teamRecordArray, winnerLoserDetails):
+    def __updateWLRecords(self, teamRecordList, winnerLoserDetails):
 
-        winnerRecord = teamRecordArray[winnerLoserDetails["winner"]]
+        winnerRecord = teamRecordList[winnerLoserDetails["winner"]]
         winnerRecord["win"] += 1
         winnerRecord["total"] += 1
         winnerRecord["percentage"] = float(winnerRecord["win"]) / float(winnerRecord["total"])
 
-        loserRecord = teamRecordArray[winnerLoserDetails["loser"]]
+        loserRecord = teamRecordList[winnerLoserDetails["loser"]]
         loserRecord["loss"] += 1
         loserRecord["total"] += 1
         loserRecord["percentage"] = float(loserRecord["win"]) / float(loserRecord["total"])
+
+        sortedTuples = sorted(teamRecordList.items(), key=lambda val: -val[1]["percentage"])
+
+        for counter, (team, values) in enumerate(sortedTuples):
+            if (winnerLoserDetails["winner"] == team):
+                winnerRecord["ranking"] = counter + 1
+            elif (winnerLoserDetails["loser"] == team):
+                loserRecord["ranking"] = counter + 1
 
         return {
             "winnerRecord": winnerRecord,
@@ -114,16 +157,35 @@ class DailyRecord(object):
     """
     Creates two "daily" format records from the game details and updated win/loss stats
     """
-    def __createDailyTeamRecord(self, date, team, teamRecord):
+    def __createDailyTeamRecord(self, dailyRecordList, date, team, teamRecord):
 
-        return {
-            "date": datetime.fromtimestamp(mktime(date)).strftime("%Y%m%d"),
-            "team": team,
-            #"win": teamRecord["win"],
-            #"loss": teamRecord["loss"],
-            #"total": teamRecord["total"],
-            "percentage": teamRecord["percentage"]
-        }
+        dateString = datetime.fromtimestamp(mktime(date)).strftime("%Y%m%d")
+        
+        # print dateString
+        # print team
+        # print dailyRecordList[0]["date"]
+
+        recordsToUpdate = filter(lambda x: (x["date"] == dateString) and (x["team"] == team), dailyRecordList)
+
+        #print recordsToUpdate
+
+        if len(recordsToUpdate) == 1:
+            recordToUpdate = recordsToUpdate[0]
+            recordToUpdate["win"] = teamRecord["win"]
+            recordToUpdate["loss"] = teamRecord["loss"]
+            recordToUpdate["total"] = teamRecord["total"]
+            recordToUpdate["percentage"] = teamRecord["percentage"]
+            recordToUpdate["ranking"] = teamRecord["ranking"]
+
+        # return {
+        #     "date": datetime.fromtimestamp(mktime(date)).strftime("%Y%m%d"),
+        #     "team": team,
+        #     "win": teamRecord["win"],
+        #     "loss": teamRecord["loss"],
+        #     "total": teamRecord["total"],
+        #     "percentage": teamRecord["percentage"],
+        #     "ranking": teamRecord["ranking"]
+        # }
 
 
     """
@@ -141,14 +203,25 @@ class DailyRecord(object):
 
         shoehornedTeams = []
 
+        print dailyRecordList
+
         combos = map(mapFunc, DailyRecord.teamList)
 
         for item in combos:
             stats = {"name": item[0], "values": item[1]}
             shoehornedTeams.append(stats)
 
+
+        for team in shoehornedTeams:
+            team["values"]
+
         return shoehornedTeams
 
+
+
+    def __getAllGameDates(self, gameDetailsList):
+        dateSet = list(set(map(lambda x: datetime.fromtimestamp(mktime(x["date"])).strftime("%Y%m%d"), gameDetailsList)))        
+        return sorted(dateSet, key=lambda date: date)
 
 
 
