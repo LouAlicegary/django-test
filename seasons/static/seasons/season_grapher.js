@@ -1,9 +1,8 @@
 /*******************************************************************************
  * 
- * File: city_grapher.js
+ * File: season_grapher.js
  * 
- * Description: Creates a line graph of temperatures for three cities (New York,
- * San Francisco, and Austin between October 1, 2011 and September 30, 2012).
+ * Description: Creates a line graph of NBA team winning percentage rankings.
  *
  * Dependencies: d3.js
  * 
@@ -11,6 +10,8 @@
 
 (function(){
 
+    
+    // incomingData is a global that's passed in from the HTML template
 
     main();
 
@@ -18,19 +19,15 @@
     function main() {
 
         // Set graph dimensions
-        var margins = {top: 20, right: 80, bottom: 30, left: 50};
-        var width = 960 - margins.left - margins.right;
+        var margins = {top: 20, right: 120, bottom: 30, left: 50};
+        var width = 1000 - margins.left - margins.right;
         var height = 500 - margins.top - margins.bottom;
 
         // Builds the SVG object that the graph will be rendered to
         var svg = generateBlankSVG(width, height, margins);
 
-        // Specify datafile path to read in
-        var dFile = "static/seasons/cities.tsv";
-
-        readDataFromFile(dFile, function(incomingData) {
-            convertDataToGraph(incomingData, svg, width, height);
-        });
+        incomingData = convertDateFormats(incomingData);
+        convertDataToGraph(incomingData, svg, width, height);
 
     }
 
@@ -52,95 +49,46 @@
 
 
 
-    function readDataFromFile(dFile, callback) {
+    // Converts date data into D3 date format
+    function convertDateFormats(rawData) {
+        
+        var inFormat = "%Y%m%d";
 
-        // Read in datafile and generate graph
-        d3.tsv(dFile, function(error, incData) {
-
-            // Catch any errors on reading in the datafile
-            if (error) throw error;
-
-            callback(incData);
-
+        rawData.forEach(function(team) {
+            team.values.forEach(function(day) {
+                day.date = d3.time.format(inFormat).parse(day.date);
+            });
         });
+
+        return rawData;
 
     }
 
 
-    function convertDataToGraph(incomingData, svg, width, height) {
+    function convertDataToGraph(teamData, svg, width, height) {
 
-        console.log(d3.keys(incomingData[0]));
-
-        var rawData = convertDateFormats(incomingData);
-        
-        var cityNames = getCityNames(rawData);
-        var cityData = createCityDataStructure(rawData, cityNames);
-
-        // Sets X value (dates) and Y value (temperatures) scaling functions
-        var xScale = getXScale(rawData, width);
-        var yScale = getYScale(cityData, height);
+        // Sets X value (dates) and Y value (win percentage) scaling functions
+        var xScale = getXScale(teamData, width);
+        var yScale = getYScale(teamData, height);
 
         // Draws the X and Y Axes
         svg = drawAxes(svg, xScale, yScale, height, width);
 
-        drawGraphContent(svg, cityNames, cityData, xScale, yScale);
+        drawGraphContent(svg, teamData, xScale, yScale);
 
-
-        // Converts date data into D3 date format
-        function convertDateFormats(rawData) {
-            
-            var inFormat = "%Y%m%d";
-
-            rawData.forEach(function(d) {
-                d.date = d3.time.format(inFormat).parse(d.date);
-            });
-
-            return rawData;
-
-        }
-
-
-        // Get city names from header row 
-        function getCityNames(rawData) {
-                   
-            var headers = d3.keys(rawData[0]);
-            
-            var cityNames = headers.filter(function(key) { 
-                return key !== "date"; 
-            });
-
-            return cityNames;
-
-        }
-
-
-        // Creates a struture like the following:
-        // [ 
-        //   {name: "NYC", values: [{date: "2012-01-01", temperature: 32}, {date: "2012-01-02", temperature: 25}, ...]}, 
-        //   {name: "SF", values: [...]}, 
-        //   {name: "ATX", values: [...]}
-        // ]
-        function createCityDataStructure(rawData, cityNames) {
-
-            var cityData = cityNames.map(function(name) {
-                return {
-                    name: name,
-                    values: rawData.map(function(d) {
-                        return {date: d.date, temperature: +d[name]};
-                    })
-                };
-            });
-
-            return cityData;
-
-        }
 
 
         function getXScale(rawData, width) {
 
-            var dateRange = d3.extent(rawData, function(d) { 
-                return d.date; 
+            var datesArray = [];
+
+            rawData.forEach(function(team) {
+                team.values.forEach(function(v) {
+                    datesArray.push(v.date);
+                });
             });
+
+            var dateRange = d3.extent(datesArray);
 
             var xScale = d3.time.scale();
             xScale.domain(dateRange);
@@ -151,22 +99,22 @@
         }
 
 
-        function getYScale(cityData, height) {
+        function getYScale(rawData, height) {
 
-            var minTemp = d3.min(cityData, function(c) { 
-                return d3.min(c.values, function(v) { 
-                    return v.temperature; 
+            var minPct = d3.min(rawData, function(team) { 
+                return d3.min(team.values, function(v) { 
+                    return v.percentage; 
                 }); 
             });
 
-            var maxTemp = d3.max(cityData, function(c) { 
-                return d3.max(c.values, function(v) { 
-                    return v.temperature; 
+            var maxPct = d3.max(rawData, function(team) { 
+                return d3.max(team.values, function(v) { 
+                    return v.percentage; 
                 }); 
             });
 
             var yScale = d3.scale.linear();
-            yScale.domain([minTemp, maxTemp]);
+            yScale.domain([minPct, maxPct]);
             yScale.range([height, 0]);
 
             return yScale;
@@ -183,26 +131,27 @@
             // Draw Y Axis
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
             svg.append("g").attr("class", "y axis").call(yAxis);
-            svg.append("text").attr("transform", "rotate(-90)").attr("y", 6).attr("dy", ".71em").style("text-anchor", "end").text("Temperature (ºF)");
+            svg.append("text").attr("transform", "rotate(-90)").attr("y", -40).attr("x", -200).attr("dy", ".71em").style("text-anchor", "end").text("Win Percentage");
 
             return svg;
 
         }
 
 
-        function drawGraphContent(svg, cityNames, cityData, xScale, yScale) {
+        function drawGraphContent(svg, rawData, xScale, yScale) {
 
             // Makes an empty selector
             var emptySelector = svg.selectAll(".city");
             
             // Creates one empty <g> element in the SVG per city with a class of "city" and data appended to object
-            var lineElements = emptySelector.data(cityData).enter().append("g").attr("class", "city");
+            var lineElements = emptySelector.data(rawData).enter().append("g").attr("class", "city");
 
             // Draws a path based on the data specified
-            lineElements = drawLines(lineElements, xScale, yScale, cityNames);
+            var lineLabels = rawData.map(x => x.name);
+            lineElements = drawLines(lineElements, xScale, yScale, lineLabels);
 
 
-            function drawLines(lineElements, xScale, yScale, cityNames) {
+            function drawLines(lineElements, xScale, yScale, lineLabels) {
 
                 // Add a <path> tag to each <g> tag
                 var pathElements = lineElements.append("path").attr("class", "line");
@@ -211,7 +160,7 @@
                 pathElements.attr("d", mapLine);
                 
                 // Select the path color based on the mapping function
-                // Maps the names of the cities to the discrete color domain (color can have up to 10 values)  
+                // Maps the names of the cities to the discrete color domain (color can have up to 30 values)  
                 pathElements.style("stroke", mapColor);
 
                 // Put the city name on the end of the line
@@ -237,7 +186,7 @@
 
                     // Set up Y value mapping function
                     function mapY(d) {
-                        return yScale(d.temperature); 
+                        return yScale(d.percentage); 
                     }
 
                 }
@@ -246,8 +195,8 @@
                 // Map the city name to a color
                 function mapColor(d) {
          
-                    var colorMapping = d3.scale.category10();
-                    colorMapping.domain(cityNames); 
+                    var colorMapping = d3.scale.category20();
+                    colorMapping.domain(lineLabels); 
          
                     return colorMapping(d.name); 
          
@@ -258,7 +207,7 @@
                 function drawLineLabels(lineElements, xScale, yScale) {
 
                     var lineTerminals = lineElements.datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; }).append("text");
-                    lineTerminals.attr("transform", function(d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.temperature) + ")"; });
+                    lineTerminals.attr("transform", function(d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.percentage) + ")"; });
                     lineTerminals.attr("x", 3).attr("dy", ".35em")
                     lineTerminals.text(function(d) { return d.name; });
 

@@ -5,6 +5,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from . import views
 
 urlpatterns = [
+    url(r'cities$', views.cities, name='cities'),
     url(r'^$', views.index, name='index'),
 ]
 
