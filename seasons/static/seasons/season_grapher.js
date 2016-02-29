@@ -19,9 +19,9 @@
     function main() {
 
         // Set graph dimensions
-        var margins = {top: 20, right: 120, bottom: 30, left: 50};
-        var width = 1000 - margins.left - margins.right;
-        var height = 500 - margins.top - margins.bottom;
+        var margins = {top: 20, right: 200, bottom: 30, left: 50};
+        var width = 2350 - margins.left - margins.right;
+        var height = 650 - margins.top - margins.bottom;
 
         // Builds the SVG object that the graph will be rendered to
         var svg = generateBlankSVG(width, height, margins);
@@ -131,7 +131,7 @@
             // Draw Y Axis
             var yAxis = d3.svg.axis().scale(yScale).orient("left");
             svg.append("g").attr("class", "y axis").call(yAxis);
-            svg.append("text").attr("transform", "rotate(-90)").attr("y", -40).attr("x", -200).attr("dy", ".71em").style("text-anchor", "end").text("Win Percentage");
+            svg.append("text").attr("transform", "rotate(-90)").attr("y", -40).attr("x", -200).attr("dy", ".71em").style("text-anchor", "end").text("League Ranking");
 
             return svg;
 
@@ -144,7 +144,7 @@
             var emptySelector = svg.selectAll(".city");
             
             // Creates one empty <g> element in the SVG per city with a class of "city" and data appended to object
-            var lineElements = emptySelector.data(rawData).enter().append("g").attr("class", "city");
+            var lineElements = emptySelector.data(rawData).enter().append("g").attr("class", "team");
 
             // Draws a path based on the data specified
             var lineLabels = rawData.map(x => x.name);
@@ -172,7 +172,7 @@
                 // Map the points in the raw data element to points for the line
                 function mapLine(d) {
 
-                    var lineMapping = d3.svg.line().interpolate("basis");            
+                    var lineMapping = d3.svg.line().interpolate("linear");            
                     lineMapping.x(mapX);
                     lineMapping.y(mapY);   
 
@@ -208,7 +208,7 @@
 
                     var lineTerminals = lineElements.datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; }).append("text");
                     lineTerminals.attr("transform", function(d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.ranking) + ")"; });
-                    lineTerminals.attr("x", 3).attr("dy", ".35em")
+                    lineTerminals.attr("x", 3).attr("dy", ".35em").attr("class", "label")
                     lineTerminals.text(function(d) { return d.name; });
 
                 }

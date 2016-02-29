@@ -54,11 +54,28 @@ class DailyRecord(object):
                     game["ranking"] = team["values"][counter-1]["ranking"]
 
         
-        print "fsaffsfs"
-        print shoehornedTeams[0]
-        
+        gameDates = self.__getAllGameDates(gameDetailsList)
+
+        for date in gameDates:
+            someList = []
+            for team in shoehornedTeams:
+                item = filter(lambda x: x["date"] == date, team["values"])
+                someList.extend(item)
+            someList = list(sorted(someList, key=lambda x: -x["percentage"]))
+            print date + "\n-----------------"
+            for counter, team in enumerate(someList):
+                team["ranking"] = counter + 1
+                print "{0} {1} {2}".format(team["ranking"], team["team"], team["percentage"])
+
+
+        self.__printTeamDailyStats(shoehornedTeams[0])
 
         return shoehornedTeams
+
+
+    def __printTeamDailyStats(self, shoehornedTeam):
+        for game in shoehornedTeam["values"]:
+            print "{0} {1} {2} {3} {4} {5}".format(game["ranking"], game["team"], game["total"], game["win"], game["loss"], game["percentage"])
 
 
     """
@@ -72,7 +89,7 @@ class DailyRecord(object):
 
         for date in sortedDateSet:
             for team in DailyRecord.teamList:
-                dailyRecordList.append({"date": date, "team": team, "won": 0, "loss": 0, "total": 0, "percentage": 0.00, "ranking": 0})
+                dailyRecordList.append({"date": date, "team": team, "win": 0, "loss": 0, "total": 0, "percentage": 0.00, "ranking": 0})
 
         return dailyRecordList
 
