@@ -20,8 +20,8 @@
 
         // Set graph dimensions
         var margins = {top: 20, right: 200, bottom: 30, left: 50};
-        var width = 2350 - margins.left - margins.right;
-        var height = 650 - margins.top - margins.bottom;
+        var width = 4000 - margins.left - margins.right;
+        var height = 450 - margins.top - margins.bottom;
 
         // Builds the SVG object that the graph will be rendered to
         var svg = generateBlankSVG(width, height, margins);
