@@ -22,3 +22,21 @@ body {
     font-size: 16px;
     font-family: Lato;
 }
+
+.x.axis .tick {
+  stroke-opacity: .1;
+}
+
+.y.axis .tick {
+  stroke-opacity: .2;
+}
+
+.y.axis .tick:nth-child(8) line:nth-child(3) {
+  stroke-opacity: 1;
+  stroke-width: 5;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
