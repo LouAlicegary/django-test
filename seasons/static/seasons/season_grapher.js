@@ -11,44 +11,70 @@
 (function(){
     
     // incomingData is a global that's passed in from the HTML template
+    // console.log("INCOMING DATA: ", incomingData);
+
+    // General Constants
+    NUM_TEAMS               = incomingData.length;  //15 
+    INCOMING_DATE_FORMAT    = "%Y-%m-%d";
+    TOOLTIP_DATE_FORMAT     = "%B %Y";
+
+    // SVG settings
+    SVG_OUTER_WIDTH         = 7000;
+    SVG_OUTER_HEIGHT        = 750;
+    SVG_MARGINS             = {top: 20, right: 200, bottom: 80, left: 50};
+    SVG_INNER_WIDTH         = SVG_OUTER_WIDTH - SVG_MARGINS.left - SVG_MARGINS.right;   // 6750 (7000 - 50 - 200)
+    SVG_INNER_HEIGHT        = SVG_OUTER_HEIGHT - SVG_MARGINS.top - SVG_MARGINS.bottom;  // 650  (750 - 20 - 80)
+
+    // X Axis - coordinate system starts at (0,0) in top left. that's why x-axis gets translated downward
+    X_AXIS_X                = 0;
+    X_AXIS_Y                = SVG_INNER_HEIGHT;
+    TICK_TEXT_X_DATE_FORMAT = "%d";
+    NUM_X_TICKS             = 200;
+
+    // Y Axis
+    Y_AXIS_LABEL_X          = -200;
+    Y_AXIS_LABEL_Y          = -40;
+    Y_AXIS_LABEL_DY         = .71;
+    Y_AXIS_TICK_SIZE_INNER  = -(SVG_INNER_WIDTH);
+    Y_AXIS_TICK_SIZE_OUTER  = 0;
+    Y_AXIS_TICK_TEXT_Y      = 25;
+    NUM_Y_TICKS             = NUM_TEAMS - 1;
+
+    // Line Labels
+    LINE_LABEL_X            = 3;
+    LINE_LABEL_DY           = .35;    
+
+    // Playoffs cutoff line
+    CUTOFF_X2               = 6750;
+    CUTOFF_Y1               = 25;
+    CUTOFF_Y2               = 25;
 
 
-    var teamObject = [
+    var focusHeight         = SVG_INNER_HEIGHT + 80;
+    var focusWidth          = 300;
+    var focusX              = 0;   // L-R from mouse pointer
+    var focusY              = -20; // U-D from top of chart
 
-        // Eastern Conference
-        { name: "Atlanta Hawks", conference: "Eastern", color1: "rgb(225, 58, 62)", color2: "rgb(6, 25, 34)" }, 
-        { name: "Boston Celtics", conference: "Eastern", color1: "rgb(0, 131, 72)", color2: "rgb(0, 131, 72)" }, 
-        { name: "Brooklyn Nets", conference: "Eastern", color1: "rgb(6, 25, 34)", color2: "rgb(161, 161, 164)" }, 
-        { name: "Charlotte Hornets", conference: "Eastern", color1: "rgb(29, 17, 96)", color2: "rgb(29, 17, 96)" }, 
-        { name: "Chicago Bulls", conference: "Eastern", color1: "rgb(206, 17, 65)", color2: "rgb(6, 25, 34)" },
-        { name: "Cleveland Cavaliers", conference: "Eastern", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" },  
-        { name: "Detroit Pistons", conference: "Eastern", color1: "rgb(237, 23, 76)", color2: "rgb(0, 107, 182)" }, 
-        { name: "Indiana Pacers", conference: "Eastern", color1: "rgb(255, 198, 51)", color2: "rgb(0, 39, 93)" }, 
-        { name: "Miami Heat", conference: "Eastern", color1: "rgb(152, 0, 46)", color2: "rgb(6, 25, 34)" }, 
-        { name: "Milwaukee Bucks", conference: "Eastern", color1: "rgb(0, 71, 27)", color2: "rgb(240, 235, 210)" }, 
-        { name: "New York Knicks", conference: "Eastern", color1: "rgb(0, 107, 182)", color2: "rgb(245, 132, 38)" }, 
-        { name: "Orlando Magic", conference: "Eastern", color1: "rgb(0, 125, 197)", color2: "rgb(196, 206, 211)" }, 
-        { name: "Philadelphia 76ers", conference: "Eastern", color1: "rgb(237, 23, 76)", color2: "rgb(0, 107, 182)" },
-        { name: "Toronto Raptors", conference: "Eastern", color1: "rgb(206, 17, 65)", color2: "rgb(6, 25, 34)" }, 
-        { name: "Washington Wizards", conference: "Eastern", color1: "rgb(0, 43, 92)", color2: "rgb(227, 24, 55)" }, 
-        
-        // Western Conference
-        { name: "Los Angeles Lakers", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "San Antonio Spurs", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Utah Jazz", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Dallas Mavericks", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Minnesota Timberwolves", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Los Angeles Clippers", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Oklahoma City Thunder", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Portland Trail Blazers", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Golden State Warriors", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Memphis Grizzlies", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Houston Rockets", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Phoenix Suns", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Sacramento Kings", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "New Orleans Pelicans", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }, 
-        { name: "Denver Nuggets", conference: "Western", color1: "rgb(134, 0, 56)", color2: "rgb(253, 187, 48)" }
-    ]
+    var lineHeight          = focusHeight;
+    var lineX               = -20;
+    var lineY1              = 0
+    var lineY2              = lineHeight;
+
+    var boxHeight           = focusHeight;
+    var boxWidth            = focusWidth;
+    var boxX                = 0;
+    var boxY                = focusY;
+    var boxMarginL          = 30;
+
+    var teamTextMarginL     = boxMarginL;
+
+    var dateBoxHeight       = 45;
+    var dateBoxWidth        = boxWidth;
+    var dateBoxX            = boxX;
+    var dateBoxY            = boxHeight - dateBoxHeight;
+
+    var dateFieldY          = SVG_INNER_HEIGHT + 65;
+    var dateFieldMarginL    = boxMarginL;
 
 
 
@@ -57,107 +83,130 @@
 
     function main() {
 
-        console.log("INCOMING", incomingData);
-
-        // Set graph dimensions
-        var margins = {top: 20, right: 200, bottom: 30, left: 50};
-        var width = 7000 - margins.left - margins.right;
-        var height = 700 - margins.top - margins.bottom;
-
         // Builds the SVG object that the graph will be rendered to
-        var svg = generateBlankSVG(width, height, margins);
+        var svg = generateBlankSVG(SVG_INNER_WIDTH, SVG_INNER_HEIGHT, SVG_MARGINS);
 
+        // TODO: This is only for D3 - more elegant solution possible?
         incomingData = convertDateStringsToDates(incomingData);
 
         // Sets X value (dates) and Y value (win percentage) scaling functions
-        var xScale = getXScale(incomingData, width);
-        var yScale = getYScale(incomingData, height);
+        var xScale = getXScale(incomingData, SVG_INNER_WIDTH);
+        var yScale = getYScale(incomingData, SVG_INNER_HEIGHT);
 
         // Draws the X and Y Axes
-        svg = drawAxes(svg, xScale, yScale, height, width);
+        svg = drawAxes(svg, xScale, yScale, SVG_INNER_HEIGHT, SVG_INNER_WIDTH);
 
+        // Draw the actual lines
         drawGraphContent(svg, incomingData, xScale, yScale);
 
-
-        var bisectDate = d3.bisector(function(d) { return d.date; }).left;
-
+        // TODO: This is only for D3 - more elegant solution possible?
         incomingData = convertDatesToDateStrings(incomingData);
 
-        buildTooltip();
+        // Build the tooltip / overlay that shows stats
+        buildTooltip(svg, SVG_INNER_WIDTH, SVG_INNER_HEIGHT, xScale, yScale);
         
-        function buildTooltip() {
+    }
 
-            // Create a tooltip grouping element and hide contents initially
-            var focus = svg.append("g").attr("class", "focus")
-                                       .style("display", "none").style("opacity", "0.8");
-            
-            // Create a rectangular colored box for the tooltip to serve as a background
-            var box = focus.append("rect").attr("class", "tooltop-box")
-                                          .attr("width", (width/25)).attr("height", (height/8))
-                                          .style("fill", "darkslategray");
-            
 
-            // Add text elements to the box
-            focus.append("text").attr("class", "teamdate")
-                                .attr("x", 12).attr("dy", "3em")
-                                .style("font-size", 24).style("fill", "white");
+    function buildTooltip(svg, SVG_INNER_WIDTH, SVG_INNER_HEIGHT, xScale, yScale) {
 
-            focus.append("text").attr("class", "team")
-                                .attr("x", 12)
-                                .attr("dy", "1em")
-                                .style("font-size", 24)
-                                .style("fill", "white");
+        // Create a tooltip grouping element and hide contents initially
+        var focus = svg.append("g").attr("class", "focus").style("display", "none");
+        
+        // Create a vertical line to serve as a "day focus"
+        focus.append("line").attr("class", "tooltip-bar")
+                            .attr("x1", lineX).attr("y1", lineY1)
+                            .attr("x2", lineX).attr("y2", lineY2); 
 
-            focus.append("text").attr("class", "teamrecord")
-                                .attr("x", 12).attr("dy", "2em")
-                                .style("font-size", 24).style("fill", "white");
-
-            // put an overlay layer over the entire D3 image that captures all mouse movement
-            var overlay = svg.append("rect").attr("class", "overlay").attr("width", width).attr("height", height);
-            
-            overlay.on("mouseover", function() { 
-                focus.style("display", null); 
-            });
-            
-            overlay.on("mouseout", function() { 
-                focus.style("display", "none"); 
-            });
-
-            overlay.on("mousemove", function () {
-
-                // Convert mouse coords to date and rank
-                var mouseCoords = d3.mouse(this);
-                var mouseX = mouseCoords[0];
-                var mouseY = mouseCoords[1];
-                var date = xScale.invert(mouseX);
-                var ranking = yScale.invert(mouseY);
-
-                // Get team date record from date and ranking
-                teamGame = getTeamAndGame(date, ranking);
-
-                // Position the tooltip and feed it data
-                focus.attr("transform", "translate(" + (mouseX+10) + "," + (mouseY+10) + ")");
-                focus.select(".team").text(teamGame.team);
-                focus.select(".teamrecord").text(teamGame.win.toString() + " - " + teamGame.loss.toString());
-                focus.select(".teamdate").text(teamGame.date);
-            });
-
+        // Create a rectangular colored box for the tooltip to serve as a background
+        focus.append("rect").attr("class", "tooltip-box")
+                            .attr("width", boxWidth).attr("height", boxHeight)
+                            .attr("x", boxX).attr("y", boxY);
+                                         
+        // Add text elements to the box for each team
+        // TODO: MOVE/ADJUST EM CALCULATION
+        for (var i = 1; i <= NUM_TEAMS; i++) {
+            var x = teamTextMarginL;
+            var dy = (i * 2.3 - 1.0).toString() + "em";
+            focus.append("text").attr("class", "team-record").attr("x", x).attr("dy", dy);
         }
 
+        // Create a rectangular colored box for the tooltip to serve as a background
+        focus.append("rect").attr("class", "date-box")
+                            .attr("width", boxWidth).attr("height", dateBoxHeight)
+                            .attr("x", dateBoxX).attr("y", dateBoxY);
 
+        // Add a date field to the box created above        
+        focus.append("text").attr("class", "game-date").attr("x", dateFieldMarginL).attr("y", dateFieldY);
+
+        // put an overlay layer over the entire D3 image that captures all mouse movement
+        buildOverlay(svg, focus, xScale, yScale);    
 
     }
 
 
-    function generateBlankSVG(width, height, margins) {
+    function buildOverlay(svg, focus, xScale, yScale) {
+
+        var overlay = svg.append("rect").attr("class", "overlay").attr("width", SVG_INNER_WIDTH).attr("height", SVG_INNER_HEIGHT);
+        
+        // Show tooltip on mouseover of overlay
+        overlay.on("mouseover", function() { 
+            focus.style("display", null); 
+        });
+        
+        // Hide tooltip on mouseout of overlay
+        overlay.on("mouseout", function() { 
+            focus.style("display", "none"); 
+        });
+
+        // Update tooltip as mouse moves through overlay
+        overlay.on("mousemove", function () {
+
+            // Capture current mouse coords
+            var mouseCoords = d3.mouse(this);
+            var mouseX = mouseCoords[0];
+            var mouseY = mouseCoords[1];
+
+            // Use mouse coords to set location of tooltip focus element
+            var xAnchor = mouseX + focusX;
+            var yAnchor = focusY;
+            focus.attr("transform", "translate(" + xAnchor + "," + yAnchor + ")");
+            
+            // Convert current mouse coords to date and rank
+            var date = xScale.invert(mouseX);
+            var ranking = yScale.invert(mouseY);
+
+            // Position the tooltip and feed it data (skipping two children because they are the line and box)
+            // TODO: CAN WE GROUP THESE INSTEAD OF SKIPPING 2?
+            for (var i=1; i <= NUM_TEAMS; i++) {
+                // Get team date record from date and ranking
+                var teamGame = getTeamAndGame(date, i);
+                var teamString = teamGame.team + " (" + teamGame.win.toString() + " - " + teamGame.loss.toString() + ")";
+                focus.select(":nth-child(" + (i+2).toString() + ")").text(teamString);
+            }
+
+            // Update the game date at the bottom of the box
+            var dateStringFormatter = d3.time.format(TOOLTIP_DATE_FORMAT);
+            var dateString = dateStringFormatter(date);
+            focus.selectAll(".game-date").text(dateString);
+        
+        });
+
+        return overlay;
+
+    }
+
+
+
+    function generateBlankSVG(SVG_INNER_WIDTH, SVG_INNER_HEIGHT, SVG_MARGINS) {
  
         // Create SVG and insert into <body>
         var svg = d3.select("body").append("svg");
-        svg.attr("width", width + margins.left + margins.right).attr("height", height + margins.top + margins.bottom);
+        svg.attr("width", SVG_INNER_WIDTH + SVG_MARGINS.left + SVG_MARGINS.right).attr("height", SVG_INNER_HEIGHT + SVG_MARGINS.top + SVG_MARGINS.bottom);
         
         // Create a <g> element within the SVG
         var g = svg.append("g")
-        g.attr("transform", "translate(" + margins.left + "," + margins.top + ")");        
+        g.attr("transform", "translate(" + SVG_MARGINS.left + "," + SVG_MARGINS.top + ")");        
  
         // Return the g element, which is a transform of the SVG parent (and the SVG's only child element).
         return g;
@@ -169,7 +218,7 @@
     // Converts date string ("150930") into D3 date format
     function convertDateStringsToDates(rawData) {
         
-        var dateStringFormatter = d3.time.format("%Y-%m-%d");
+        var dateStringFormatter = d3.time.format(INCOMING_DATE_FORMAT);
 
         rawData.forEach(function(team) {
             team.values.forEach(function(dayRecord) {
@@ -186,7 +235,7 @@
     // Converts dates from D3 format to strings
     function convertDatesToDateStrings(rawData) {
         
-        var dateStringFormatter = d3.time.format("%Y-%m-%d");
+        var dateStringFormatter = d3.time.format(INCOMING_DATE_FORMAT);
 
         rawData.forEach(function(team) {
             team.values.forEach(function(dayRecord) {
@@ -200,19 +249,28 @@
 
 
 
-    function drawAxes(svg, xScale, yScale, height, width) {
+    function drawAxes(svg, xScale, yScale, SVG_INNER_HEIGHT, SVG_INNER_WIDTH) {
 
         // Draw X Axis
-        var xAxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(200).tickFormat(d3.time.format("%d"));
-        svg.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(xAxis);
+        var xAxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(NUM_X_TICKS).tickFormat(d3.time.format(TICK_TEXT_X_DATE_FORMAT));
+        svg.append("g").attr("class", "x axis").attr("transform", "translate(" + X_AXIS_X + "," + X_AXIS_Y + ")").call(xAxis);
+        
+        // Format X Axis Tick Text
+        svg.selectAll(".x.axis .tick text").attr("y", Y_AXIS_TICK_TEXT_Y);
 
         // Draw Y Axis
-        var yAxis = d3.svg.axis().scale(yScale).orient("left").ticks(14).tickSize(-width, 0);
+        var yAxis = d3.svg.axis().scale(yScale).orient("left").ticks(NUM_Y_TICKS).tickSize(Y_AXIS_TICK_SIZE_INNER, Y_AXIS_TICK_SIZE_OUTER);
         svg.append("g").attr("class", "y axis").call(yAxis);
-        svg.append("text").attr("transform", "rotate(-90)").attr("y", -40).attr("x", -200).attr("dy", ".71em").style("text-anchor", "end").text("League Ranking");
+        
+        // Draw Y Axis Label
+        var dy = Y_AXIS_LABEL_DY.toString() + "em";
+        svg.append("text").attr("transform", "rotate(-90)")
+                          .attr("x", Y_AXIS_LABEL_X).attr("y", Y_AXIS_LABEL_Y).attr("dy", dy)
+                          .style("text-anchor", "end")
+                          .text("League Ranking");
 
         // Add a cutoff line under the 8th position
-        var cutoff = svg.select(".y.axis .tick:nth-child(8)").append("line").attr("y1", "25").attr("y2", "25").attr("x2", "6750"); 
+        var cutoff = svg.select(".y.axis .tick:nth-child(8)").append("line").attr("y1", CUTOFF_Y1).attr("x2", CUTOFF_X2).attr("y2", CUTOFF_Y2); 
 
         return svg;
 
@@ -296,8 +354,12 @@
             function drawLineLabels(lineElements, xScale, yScale) {
 
                 var lineTerminals = lineElements.datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; }).append("text");
+                
                 lineTerminals.attr("transform", function(d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.ranking) + ")"; });
-                lineTerminals.attr("x", 3).attr("dy", ".35em").attr("class", "label")
+                
+                var dy = LINE_LABEL_DY.toString() + "em";
+                lineTerminals.attr("x", LINE_LABEL_X).attr("dy", dy).attr("class", "label")
+                
                 lineTerminals.text(function(d) { return d.name; });
 
             }
@@ -307,7 +369,7 @@
     }
 
 
-    function getXScale(rawData, width) {
+    function getXScale(rawData, SVG_INNER_WIDTH) {
 
         var datesArray = [];
 
@@ -321,14 +383,14 @@
 
         var xScale = d3.time.scale();
         xScale.domain(dateRange);
-        xScale.range([0, width]);
+        xScale.range([0, SVG_INNER_WIDTH]);
 
         return xScale;
 
     }
 
 
-    function getYScale(rawData, height) {
+    function getYScale(rawData, SVG_INNER_HEIGHT) {
 
         var minPct = d3.min(rawData, function(team) { 
             return d3.min(team.values, function(v) { 
@@ -344,7 +406,7 @@
 
         var yScale = d3.scale.linear();
         yScale.domain([minPct, maxPct]);
-        yScale.range([0, height]);
+        yScale.range([0, SVG_INNER_HEIGHT]);
 
         return yScale;
         
@@ -353,7 +415,7 @@
 
     function getTeamAndGame(mouseDate, mouseRank) {
 
-        var dateStringFormatter = d3.time.format("%Y-%m-%d");
+        var dateStringFormatter = d3.time.format(INCOMING_DATE_FORMAT);
         var dateString = dateStringFormatter(mouseDate);
 
         var ranking = Math.round(mouseRank);
@@ -365,13 +427,10 @@
             clickedTeamGame = team.values.filter( v => (v.date == dateString) && (v.ranking == ranking) ); 
             if (clickedTeamGame.length == 1) {
                 clickedTeamGame = clickedTeamGame[0];
-                console.log(clickedTeamGame);
                 break;
             }
         }
         
-        console.log(clickedTeamGame);
-
         return clickedTeamGame;
     
     }

@@ -2,6 +2,9 @@ body {
     font: 10px sans-serif;
 }
 
+
+/*************************** X AND Y AXIS *****************************/
+
 .axis path, .axis line {
     fill: none;
     stroke: #000;
@@ -12,31 +15,73 @@ body {
     display: none;
 }
 
+.x.axis .tick {
+    stroke-opacity: 1;
+}
+
+.x.axis .tick text {
+    font-size: 28px;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: bold;
+}
+
+.y.axis .tick {
+    stroke-opacity: .2;
+}
+
+/* The JS jams an extra line within the 8th (tick) container to show the playoff cutoff */
+.y.axis .tick:nth-child(8) line:nth-child(3) {
+    stroke-opacity: 1;
+    stroke-width: 5;
+}
+
+
+/*************************** TEAM LINES *****************************/
+
 .line {
-    fill: none;
-    /*stroke: steelblue;*/
     stroke-width: 12px;
+    fill: none;
 }
 
 .label {
     font-size: 16px;
-    font-family: Lato;
+    font-family: 'Lato';
 }
 
-.x.axis .tick {
-  stroke-opacity: .1;
-}
 
-.y.axis .tick {
-  stroke-opacity: .2;
-}
-
-.y.axis .tick:nth-child(8) line:nth-child(3) {
-  stroke-opacity: 1;
-  stroke-width: 5;
-}
+/*************************** OVERLAY AND TOOLTIP BOX ********************/
 
 .overlay {
-  fill: none;
-  pointer-events: all;
+    fill: none;
+    pointer-events: all;
+}
+
+.focus .tooltip-bar {
+    stroke-opacity: 0.5;
+    stroke-width: 50;
+    stroke: pink;    
+}
+
+.focus .tooltip-box {
+    opacity: 0.8;    
+    fill: darkslategray;
+}
+
+.focus .team-record {
+    font-size: 20px;
+    fill: white;
+    opacity: 1;    
+}
+
+.focus .date-box {
+    opacity: 1;    
+    fill: darkslategray;
+}
+
+.focus .game-date{
+    font-size: 28px;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: bold;    
+    fill: pink;
+    opacity: 1;    
 }

@@ -12,6 +12,7 @@
         <meta charset="utf-8">
 
         <!-- Load all Stylesheets here -->
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
         <link rel="stylesheet" type="text/css" href="{% static 'seasons/season_style.css' %}" />
     
     </head>
@@ -35,4 +36,5 @@
 
 <!-- Need to pass JSON data payload from backend into page -->
 <script> var incomingData = {{jsonData|safe}}; </script>
+<script src="{% static 'seasons/teams.js' %}"></script>
 <script src="{% static 'seasons/season_grapher.js' %}"></script>
