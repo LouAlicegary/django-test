@@ -25,8 +25,16 @@ body {
     font-weight: bold;
 }
 
+.y.axis path {
+    display: none;
+}
+
 .y.axis .tick {
     stroke-opacity: .2;
+}
+
+.y.axis .tick text {
+    display: none;
 }
 
 /* The JS jams an extra line within the 8th (tick) container to show the playoff cutoff */
@@ -44,9 +52,19 @@ body {
 }
 
 .label {
+    display: none;
     font-size: 16px;
     font-family: 'Lato';
 }
+
+
+/*************************** GAME DOTS *****************************/
+
+.game-dot {
+    fill: black;
+    stroke: lightgreen;
+}
+
 
 
 /*************************** OVERLAY AND TOOLTIP BOX ********************/
@@ -67,7 +85,16 @@ body {
     fill: darkslategray;
 }
 
-.focus .team-record {
+.focus .team-rank{
+    font-size: 14px;
+    fill: pink;
+    opacity: 1;    
+}
+
+.focus .team-record,
+.focus .team-wins,
+.focus .team-losses,
+.focus .team-percent {
     font-size: 20px;
     fill: white;
     opacity: 1;    

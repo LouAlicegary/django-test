@@ -11,10 +11,10 @@
 (function(){
     
     // incomingData is a global that's passed in from the HTML template
-    // console.log("INCOMING DATA: ", incomingData);
+    console.log("INCOMING DATA: ", incomingData);
 
     // General Constants
-    NUM_TEAMS               = incomingData.length;  //15 
+    NUM_TEAMS               = incomingData.length;  //15     
     INCOMING_DATE_FORMAT    = "%Y-%m-%d";
     TOOLTIP_DATE_FORMAT     = "%B %Y";
 
@@ -28,53 +28,60 @@
     // X Axis - coordinate system starts at (0,0) in top left. that's why x-axis gets translated downward
     X_AXIS_X                = 0;
     X_AXIS_Y                = SVG_INNER_HEIGHT;
-    TICK_TEXT_X_DATE_FORMAT = "%d";
-    NUM_X_TICKS             = 200;
+    X_AXIS_NUM_TICKS        = 200;
+    X_AXIS_TICK_DATE_FORMAT = "%d";
 
-    // Y Axis
-    Y_AXIS_LABEL_X          = -200;
-    Y_AXIS_LABEL_Y          = -40;
-    Y_AXIS_LABEL_DY         = .71;
+    // Y Axis - tick size is negative for some unknown reason...i don't get it but that's the only way it works
+    Y_AXIS_NUM_TICKS        = NUM_TEAMS - 1;
     Y_AXIS_TICK_SIZE_INNER  = -(SVG_INNER_WIDTH);
     Y_AXIS_TICK_SIZE_OUTER  = 0;
     Y_AXIS_TICK_TEXT_Y      = 25;
-    NUM_Y_TICKS             = NUM_TEAMS - 1;
-
+    
     // Line Labels
     LINE_LABEL_X            = 3;
-    LINE_LABEL_DY           = .35;    
+    LINE_LABEL_DY           = 0.35;    
 
     // Playoffs cutoff line
     CUTOFF_X2               = 6750;
     CUTOFF_Y1               = 25;
     CUTOFF_Y2               = 25;
 
+    GAME_DOT_RADIUS         = 10;
 
+    // Tooltip graphic
     var focusHeight         = SVG_INNER_HEIGHT + 80;
-    var focusWidth          = 300;
+    var focusWidth          = 450;
     var focusX              = 0;   // L-R from mouse pointer
     var focusY              = -20; // U-D from top of chart
 
+    // Tooltip focus line
     var lineHeight          = focusHeight;
     var lineX               = -20;
     var lineY1              = 0
     var lineY2              = lineHeight;
 
+    // Tooltip record box
     var boxHeight           = focusHeight;
     var boxWidth            = focusWidth;
     var boxX                = 0;
     var boxY                = focusY;
-    var boxMarginL          = 30;
 
-    var teamTextMarginL     = boxMarginL;
+    // Team record
+    var rankTextMarginL     = 5;
+    var teamTextMarginL     = 30;
+    var winTextMarginL      = 300;
+    var lossTextMarginL     = 340;
+    var percentTextMarginL  = 380;        
 
+    // Date box
     var dateBoxHeight       = 45;
     var dateBoxWidth        = boxWidth;
     var dateBoxX            = boxX;
     var dateBoxY            = boxHeight - dateBoxHeight;
 
+    // Date field
     var dateFieldY          = SVG_INNER_HEIGHT + 65;
-    var dateFieldMarginL    = boxMarginL;
+    var dateFieldMarginL    = 5;
 
 
 
@@ -97,7 +104,9 @@
         svg = drawAxes(svg, xScale, yScale, SVG_INNER_HEIGHT, SVG_INNER_WIDTH);
 
         // Draw the actual lines
-        drawGraphContent(svg, incomingData, xScale, yScale);
+        var lineElements = drawGraphContent(svg, incomingData, xScale, yScale);
+
+        drawDots(incomingData, svg, xScale, yScale);
 
         // TODO: This is only for D3 - more elegant solution possible?
         incomingData = convertDatesToDateStrings(incomingData);
@@ -122,14 +131,49 @@
         focus.append("rect").attr("class", "tooltip-box")
                             .attr("width", boxWidth).attr("height", boxHeight)
                             .attr("x", boxX).attr("y", boxY);
-                                         
-        // Add text elements to the box for each team
-        // TODO: MOVE/ADJUST EM CALCULATION
+
+
+        // Add rank text elements to the box for each team
+        // Using the .5 calculation to hit the middle of the line
+        var rankGroup = focus.append("g").attr("class", "rank-group");        
+        for (var i = 1; i <= NUM_TEAMS; i++) {
+            var x = rankTextMarginL;
+            var y = yScale(i + 0.5);
+            rankGroup.append("text").attr("class", "team-rank").attr("x", x).attr("y", y).text(i.toString());
+        }
+
+        // Add team name text elements to the box for each team
+        var nameGroup = focus.append("g").attr("class", "name-group");
         for (var i = 1; i <= NUM_TEAMS; i++) {
             var x = teamTextMarginL;
-            var dy = (i * 2.3 - 1.0).toString() + "em";
-            focus.append("text").attr("class", "team-record").attr("x", x).attr("dy", dy);
+            var y = yScale(i + 0.5);
+            nameGroup.append("text").attr("class", "team-record").attr("x", x).attr("y", y);
         }
+
+        // Add team name text elements to the box for each team
+        var winGroup = focus.append("g").attr("class", "win-group");
+        for (var i = 1; i <= NUM_TEAMS; i++) {
+            var x = winTextMarginL;
+            var y = yScale(i + 0.5);
+            winGroup.append("text").attr("class", "team-wins").attr("x", x).attr("y", y);
+        }
+
+        // Add team name text elements to the box for each team
+        var lossGroup = focus.append("g").attr("class", "loss-group");
+        for (var i = 1; i <= NUM_TEAMS; i++) {
+            var x = lossTextMarginL;
+            var y = yScale(i + 0.5);
+            lossGroup.append("text").attr("class", "team-losses").attr("x", x).attr("y", y);
+        }
+
+        // Add team name text elements to the box for each team
+        var percentGroup = focus.append("g").attr("class", "percent-group");
+        for (var i = 1; i <= NUM_TEAMS; i++) {
+            var x = percentTextMarginL;
+            var y = yScale(i + 0.5);
+            percentGroup.append("text").attr("class", "team-percent").attr("x", x).attr("y", y);
+        }
+
 
         // Create a rectangular colored box for the tooltip to serve as a background
         focus.append("rect").attr("class", "date-box")
@@ -176,18 +220,28 @@
             var date = xScale.invert(mouseX);
             var ranking = yScale.invert(mouseY);
 
-            // Position the tooltip and feed it data (skipping two children because they are the line and box)
-            // TODO: CAN WE GROUP THESE INSTEAD OF SKIPPING 2?
+            // Feed data into the tooltip (skipping two children because they are the line and box)
             for (var i=1; i <= NUM_TEAMS; i++) {
-                // Get team date record from date and ranking
                 var teamGame = getTeamAndGame(date, i);
-                var teamString = teamGame.team + " (" + teamGame.win.toString() + " - " + teamGame.loss.toString() + ")";
-                focus.select(":nth-child(" + (i+2).toString() + ")").text(teamString);
+
+                var teamString = teamGame.team.toUpperCase();
+                focus.select(".name-group text:nth-child(" + (i).toString() + ")").text(teamString);
+                
+                var winString = teamGame.win.toString();
+                focus.select(".win-group text:nth-child(" + (i).toString() + ")").text(winString);
+                
+                var lossString = teamGame.loss.toString();
+                focus.select(".loss-group text:nth-child(" + (i).toString() + ")").text(lossString);                
+            
+                var percentString = teamGame.percentage.toFixed(3).toString();
+                focus.select(".percent-group text:nth-child(" + (i).toString() + ")").text(percentString); 
             }
+
+
 
             // Update the game date at the bottom of the box
             var dateStringFormatter = d3.time.format(TOOLTIP_DATE_FORMAT);
-            var dateString = dateStringFormatter(date);
+            var dateString = dateStringFormatter(date).toUpperCase();
             focus.selectAll(".game-date").text(dateString);
         
         });
@@ -196,6 +250,30 @@
 
     }
 
+
+    // Adds a dot to the canvas for each game a team played
+    function drawDots(incomingData, svg, xScale, yScale) {
+
+        playedGameData = incomingData.map(x => ( { name: x.name, values: x.values.filter(y => y.game == 1) } ));
+
+        playedGameData.forEach(function(x, index) {
+            
+            var name = x.name;
+            var values = x.values;
+
+            // Draw a circle on every game in the set
+            svg.selectAll(".team:nth-child(" + index + ")").data(values).enter().append("circle").attr("class", "game-dot")
+                .attr("r", GAME_DOT_RADIUS)
+           .attr("cx", function(d) { 
+                    return xScale(d.date); 
+                })
+                .attr("cy", function(d) { 
+                    return yScale(d.ranking); 
+                });
+
+        });
+
+    }
 
 
     function generateBlankSVG(SVG_INNER_WIDTH, SVG_INNER_HEIGHT, SVG_MARGINS) {
@@ -252,22 +330,16 @@
     function drawAxes(svg, xScale, yScale, SVG_INNER_HEIGHT, SVG_INNER_WIDTH) {
 
         // Draw X Axis
-        var xAxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(NUM_X_TICKS).tickFormat(d3.time.format(TICK_TEXT_X_DATE_FORMAT));
+        var xAxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(X_AXIS_NUM_TICKS).tickFormat(d3.time.format(X_AXIS_TICK_DATE_FORMAT));
         svg.append("g").attr("class", "x axis").attr("transform", "translate(" + X_AXIS_X + "," + X_AXIS_Y + ")").call(xAxis);
         
         // Format X Axis Tick Text
         svg.selectAll(".x.axis .tick text").attr("y", Y_AXIS_TICK_TEXT_Y);
 
         // Draw Y Axis
-        var yAxis = d3.svg.axis().scale(yScale).orient("left").ticks(NUM_Y_TICKS).tickSize(Y_AXIS_TICK_SIZE_INNER, Y_AXIS_TICK_SIZE_OUTER);
+        var yAxis = d3.svg.axis().scale(yScale).orient("left").ticks(Y_AXIS_NUM_TICKS).tickSize(Y_AXIS_TICK_SIZE_INNER, Y_AXIS_TICK_SIZE_OUTER);
         svg.append("g").attr("class", "y axis").call(yAxis);
         
-        // Draw Y Axis Label
-        var dy = Y_AXIS_LABEL_DY.toString() + "em";
-        svg.append("text").attr("transform", "rotate(-90)")
-                          .attr("x", Y_AXIS_LABEL_X).attr("y", Y_AXIS_LABEL_Y).attr("dy", dy)
-                          .style("text-anchor", "end")
-                          .text("League Ranking");
 
         // Add a cutoff line under the 8th position
         var cutoff = svg.select(".y.axis .tick:nth-child(8)").append("line").attr("y1", CUTOFF_Y1).attr("x2", CUTOFF_X2).attr("y2", CUTOFF_Y2); 
@@ -280,14 +352,17 @@
     function drawGraphContent(svg, rawData, xScale, yScale) {
 
         // Makes an empty selector
-        var emptySelector = svg.selectAll(".city");
+        var emptySelector = svg.selectAll("xxxxxx");
         
         // Creates one empty <g> element in the SVG per city with a class of "city" and data appended to object
         var lineElements = emptySelector.data(rawData).enter().append("g").attr("class", "team");
 
         // Draws a path based on the data specified
         var lineLabels = rawData.map(x => x.name);
-        lineElements = drawLines(lineElements, xScale, yScale, lineLabels);
+        
+        drawLines(lineElements, xScale, yScale, lineLabels);
+
+        return lineElements;
 
 
         function drawLines(lineElements, xScale, yScale, lineLabels) {
@@ -303,9 +378,8 @@
             pathElements.style("stroke", mapColor);
 
             // Put the city name on the end of the line
-            drawLineLabels(lineElements, xScale, yScale);
+            // drawLineLabels(lineElements, xScale, yScale);
 
-            return lineElements;
 
 
             // Map the points in the raw data element to points for the line
@@ -351,16 +425,23 @@
 
 
             // Adds name of the city to the end of each line
+            // TODO: Get rid of em calculation
             function drawLineLabels(lineElements, xScale, yScale) {
 
-                var lineTerminals = lineElements.datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; }).append("text");
+                var lineTerminals = lineElements.datum(function(d) { 
+                    return {name: d.name, value: d.values[d.values.length - 1]}; 
+                }).append("text");
                 
-                lineTerminals.attr("transform", function(d) { return "translate(" + xScale(d.value.date) + "," + yScale(d.value.ranking) + ")"; });
+                lineTerminals.attr("transform", function(d) { 
+                    return "translate(" + xScale(d.value.date) + "," + yScale(d.value.ranking) + ")"; 
+                });
                 
                 var dy = LINE_LABEL_DY.toString() + "em";
                 lineTerminals.attr("x", LINE_LABEL_X).attr("dy", dy).attr("class", "label")
                 
-                lineTerminals.text(function(d) { return d.name; });
+                lineTerminals.text(function(d) { 
+                    return d.name; 
+                });
 
             }
 

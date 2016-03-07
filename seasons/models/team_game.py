@@ -18,6 +18,7 @@ class TeamGame(models.Model):
     total       = models.IntegerField()
     percentage  = models.FloatField()
     ranking     = models.IntegerField()
+    game        = models.IntegerField(default=0)
 
 
     ######################################## Static Methods ###################################
@@ -40,49 +41,15 @@ class TeamGame(models.Model):
     @staticmethod
     def createFromGameDetails(gameDetailsList):
         
-        print "*** Creating Empty Record Dictionary ***"
-        teamRecordList = TeamGame.__createEmptyTeamRecordDict()
-
         print "*** Creating Stubbed Daily Record List ***"
         dailyRecordList = TeamGame.__createStubbedDailyRecordList(gameDetailsList)
         
         print "*** Populating Daily Record List ***"
-        dailyRecordList = TeamGame.__populateDailyRecordList(dailyRecordList, gameDetailsList, teamRecordList);
+        teamRecordDict = TeamGame.__createEmptyTeamRecordDict()
+        dailyRecordList = TeamGame.__populateDailyRecordList(dailyRecordList, gameDetailsList, teamRecordDict);
 
         return dailyRecordList
 
-    
-    """
-    Creates a "daily" format record from the game details and updated win/loss stats
-    """
-    @staticmethod
-    def __createDailyTeamRecord(dailyRecordList, gameDate, team, teamRecord):
-        
-        recordsToUpdate = filter(lambda x: (x["date"] == gameDate) and (x["team"] == team), dailyRecordList)
-
-        if len(recordsToUpdate) == 1:
-            
-            recordToUpdate = recordsToUpdate[0]
-            recordToUpdate["win"] = teamRecord["win"]
-            recordToUpdate["loss"] = teamRecord["loss"]
-            recordToUpdate["total"] = teamRecord["total"]
-            recordToUpdate["percentage"] = teamRecord["percentage"]
-            recordToUpdate["ranking"] = teamRecord["ranking"]
-
-
-
-    """
-    Creates a dictionary to hold each team's running win/loss record
-    """
-    @staticmethod
-    def __createEmptyTeamRecordDict():
-        
-        recordDict = {}
-        
-        for team in Team.teamList:
-            recordDict[team] = {"win": 0, "loss": 0, "total": 0, "percentage": 0.00, "ranking": 0}
-
-        return recordDict
 
 
     """
@@ -97,25 +64,34 @@ class TeamGame(models.Model):
 
         for date in sortedDateSet:
             for team in Team.teamList:
-                dailyRecordList.append({"date": date, "team": team, "win": 0, "loss": 0, "total": 0, "percentage": 0.00, "ranking": 0})
+                dailyRecordList.append({
+                    "date": date, 
+                    "team": team, 
+                    "win": 0, 
+                    "loss": 0, 
+                    "total": 0, 
+                    "percentage": 0.00, 
+                    "ranking": 0, 
+                    "game": 0
+                })
 
         return dailyRecordList
 
 
     """
-    Parse the gameDetailsList and create a dailyRecordList
+    Parse the gameDetailsList, update the running teamRecordDict, and return a dailyRecordList
     """
     @staticmethod
-    def __populateDailyRecordList(dailyRecordList, gameDetailsList, teamRecordList):
+    def __populateDailyRecordList(dailyRecordList, gameDetailsList, teamRecordDict):
 
         for game in gameDetailsList:
             
             winnerLoserDetails = TeamGame.__getWinnerAndLoserDetails(game)
             
             if winnerLoserDetails:
-                
-                updatedWLRecords = TeamGame.__updateWLRecords(teamRecordList, winnerLoserDetails)
-                
+            
+                updatedWLRecords = TeamGame.__updateTeamRecordList(teamRecordDict, winnerLoserDetails)
+
                 gameDate = winnerLoserDetails["date"]
                 gameWinner = winnerLoserDetails["winner"]
                 gameLoser = winnerLoserDetails["loser"]
@@ -124,6 +100,28 @@ class TeamGame(models.Model):
                 TeamGame.__createDailyTeamRecord(dailyRecordList, gameDate, gameLoser, updatedWLRecords["loserRecord"])
 
         return dailyRecordList
+
+
+
+    """
+    Creates a dictionary to hold each team's running win/loss record
+    """
+    @staticmethod
+    def __createEmptyTeamRecordDict():
+        
+        recordDict = {}
+        
+        for team in Team.teamList:
+            
+            recordDict[team] = {
+                "win": 0, 
+                "loss": 0, 
+                "total": 0, 
+                "percentage": 0.00, 
+                "ranking": 0
+            }
+
+        return recordDict
 
 
     """
@@ -164,22 +162,39 @@ class TeamGame(models.Model):
     Updates the win/loss record dict for the two teams that played
     """
     @staticmethod
-    def __updateWLRecords(teamRecordList, winnerLoserDetails):
+    def __updateTeamRecordList(teamRecordDict, winnerLoserDetails):
+
+        if (winnerLoserDetails == None): 
+            return None
 
         # Update the winner's record in the team record list
-        winnerRecord = teamRecordList[winnerLoserDetails["winner"]]
+        winner = winnerLoserDetails["winner"]
+        winnerRecord = {}
+        winnerRecord = teamRecordDict[winnerLoserDetails["winner"]]
         winnerRecord["win"] += 1
         winnerRecord["total"] += 1
         winnerRecord["percentage"] = float(winnerRecord["win"]) / float(winnerRecord["total"])
 
         # Update the loser's record in the team record list
-        loserRecord = teamRecordList[winnerLoserDetails["loser"]]
+        loser = winnerLoserDetails["loser"]
+        loserRecord = {}
+        loserRecord = teamRecordDict[winnerLoserDetails["loser"]]
         loserRecord["loss"] += 1
         loserRecord["total"] += 1
         loserRecord["percentage"] = float(loserRecord["win"]) / float(loserRecord["total"])
 
+        print "\n==="
+        print winnerLoserDetails
+        print winner
+        print teamRecordDict[winner]
+        print loser
+        print teamRecordDict[loser]
+        print winnerRecord
+        print loserRecord
+        print "===\n"
+
         # Sort all of the teams' records by win percentage best to worst
-        sortedTuples = sorted(teamRecordList.items(), key=lambda val: -val[1]["percentage"])
+        sortedTuples = sorted(teamRecordDict.items(), key=lambda val: -val[1]["percentage"])
 
         # Apply rankings to the winner's and loser's records
         for counter, (team, values) in enumerate(sortedTuples):
@@ -192,5 +207,25 @@ class TeamGame(models.Model):
             "winnerRecord": winnerRecord,
             "loserRecord": loserRecord
         }
+
+    
+    """
+    Creates a "daily" format record from the game details and updated win/loss stats
+    """
+    @staticmethod
+    def __createDailyTeamRecord(dailyRecordList, gameDate, team, teamRecord):
+        
+        recordsToUpdate = filter(lambda x: (x["date"] == gameDate) and (x["team"] == team), dailyRecordList)
+
+        if len(recordsToUpdate) == 1:
+            
+            recordToUpdate = recordsToUpdate[0]
+            # Date and Team don't need to change but other six attributes do
+            recordToUpdate["win"] = teamRecord["win"]
+            recordToUpdate["loss"] = teamRecord["loss"]
+            recordToUpdate["total"] = teamRecord["total"]
+            recordToUpdate["percentage"] = teamRecord["percentage"]
+            recordToUpdate["ranking"] = teamRecord["ranking"]
+            recordToUpdate["game"] = 1
 
 

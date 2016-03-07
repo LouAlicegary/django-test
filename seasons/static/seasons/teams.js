@@ -36,4 +36,35 @@ var teamObject = [
     { name: "San Antonio Spurs",        conference: "Western",    color1: "rgb(134, 0, 56)",      color2: "rgb(253, 187, 48)" }, 
     { name: "Utah Jazz",                conference: "Western",    color1: "rgb(134, 0, 56)",      color2: "rgb(253, 187, 48)" }, 
 
-]
+];
+
+
+
+// Some really janky scrolling code that scrolls the page with mouse movement
+
+
+/*
+
+(function(){
+
+    // Variables for current position
+    var x, y;
+
+    function handleMouse(e) {
+      // Verify that x and y already have some value
+      if (x && y) {
+        // Scroll window by difference between current and previous positions
+        window.scrollBy(e.clientX - x, e.clientY - y);
+      }
+
+      // Store current position
+      x = e.clientX;
+      y = e.clientY;
+    }
+
+    // Assign handleMouse to mouse movement events
+    document.onmousemove = handleMouse;
+
+})()
+
+*/
