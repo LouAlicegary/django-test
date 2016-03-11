@@ -8,28 +8,33 @@
 
     <head>
 
+        <title>NBA 2015-2016 Rankings</title>
         <meta charset="utf-8">
 
         <!-- Load all Stylesheets here -->
-        <link rel="stylesheet" type="text/css" href="{% static 'seasons/style.css' %}" />
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" type="text/css" href="{% static 'seasons/season_style.css' %}" />
     
     </head>
 
     <body>
 
-        <h2>2015-2016 NBA Season Standings</h2>
-        <h3>(based on Win Percentage)</h3>
+        <h2>2015-2016 NBA Season Team Rankings</h2>
+        <h3>(based on win percentage)</h3>
 
     </body>
 
 </html>
 
+<!-- ********************************************************************************************* -->
 
-<!-- Load all JavaScript down here -->
+<!-- D3 -->
 <script src="//d3js.org/d3.v3.min.js"></script>
 
-<script>
-    var incomingData = {{incomingJsonData|safe}};
-</script>
+<!-- Textures library for D3 -->
+<script src="{% static 'seasons/textures.js' %}"></script>
 
+<!-- Need to pass JSON data payload from backend into page -->
+<script> var incomingData = {{jsonData|safe}}; </script>
+<script src="{% static 'seasons/teams.js' %}"></script>
 <script src="{% static 'seasons/season_grapher.js' %}"></script>

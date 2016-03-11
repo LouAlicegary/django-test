@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'seasons.apps.SeasonsConfig', # points to class in seasons/apps.py
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -76,10 +77,16 @@ WSGI_APPLICATION = 'django-test.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'django_test',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost', 
+        'PORT': '3306',              
     }
 }
+
+
 
 
 # Password validation

@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
-from django.db import models
-
-# Create your models here.
+from seasons.models.game           import Game
+from seasons.models.team           import Team
+from seasons.models.team_game      import TeamGame

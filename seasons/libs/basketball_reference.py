@@ -1,9 +1,12 @@
 from bs4 import BeautifulSoup
+
 import requests
-import time
+import dateutil.parser
+
 
 class Scraper(object):
     
+
     """
     Returns an array of all the games found at the specified URL
     """
@@ -52,10 +55,12 @@ class Scraper(object):
 
 
     """
-    Takes a date in the BR "Thu, Nov 7, 2015" format and converts it to a Python dateString
+    Takes a date in the BR "Thu, Nov 7, 2015" format and converts it to a DateTime object
     """
     def __dateParser(self, dateString):
+        
+        timestamp = dateutil.parser.parse(dateString)
 
-        return time.strptime(dateString, "%a, %b %d, %Y")
+        return timestamp
 
 
