@@ -54,7 +54,7 @@ body {
 .label {
     display: none;
     font-size: 16px;
-    font-family: 'Lato';
+    font-family: 'Open Sans', sans-serif;;
 }
 
 
@@ -94,8 +94,9 @@ body {
 .focus .team-record,
 .focus .team-wins,
 .focus .team-losses,
-.focus .team-percent {
-    font-size: 20px;
+.focus .team-percent,
+.focus .team-games-back {
+    font-size: 18px;
     fill: white;
     opacity: 1;    
 }

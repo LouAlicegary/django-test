@@ -21,8 +21,8 @@
     // SVG settings
     SVG_OUTER_WIDTH         = 7000;
     SVG_OUTER_HEIGHT        = 750;
-    SVG_MARGINS             = {top: 20, right: 200, bottom: 80, left: 50};
-    SVG_INNER_WIDTH         = SVG_OUTER_WIDTH - SVG_MARGINS.left - SVG_MARGINS.right;   // 6750 (7000 - 50 - 200)
+    SVG_MARGINS             = {top: 20, right: 500, bottom: 80, left: 50};
+    SVG_INNER_WIDTH         = SVG_OUTER_WIDTH - SVG_MARGINS.left - SVG_MARGINS.right;   // 6450 (7000 - 50 - 500)
     SVG_INNER_HEIGHT        = SVG_OUTER_HEIGHT - SVG_MARGINS.top - SVG_MARGINS.bottom;  // 650  (750 - 20 - 80)
 
     // X Axis - coordinate system starts at (0,0) in top left. that's why x-axis gets translated downward
@@ -42,11 +42,14 @@
     LINE_LABEL_DY           = 0.35;    
 
     // Playoffs cutoff line
-    CUTOFF_X2               = 6750;
+    CUTOFF_X2               = SVG_INNER_WIDTH;
     CUTOFF_Y1               = 25;
     CUTOFF_Y2               = 25;
 
     GAME_DOT_RADIUS         = 10;
+
+    OVERLAY_WIDTH           = SVG_INNER_WIDTH + 50; // TODO: The 50 offsets the line stroke width. Maybe that should be in here?
+    OVERLAY_HEIGHT          = SVG_INNER_HEIGHT;
 
     // Tooltip graphic
     var focusHeight         = SVG_INNER_HEIGHT + 80;
@@ -56,22 +59,23 @@
 
     // Tooltip focus line
     var lineHeight          = focusHeight;
-    var lineX               = -20;
+    var lineX               = 0;
     var lineY1              = 0
     var lineY2              = lineHeight;
 
     // Tooltip record box
     var boxHeight           = focusHeight;
     var boxWidth            = focusWidth;
-    var boxX                = 0;
+    var boxX                = 20;
     var boxY                = focusY;
 
     // Team record
-    var rankTextMarginL     = 5;
-    var teamTextMarginL     = 30;
-    var winTextMarginL      = 300;
-    var lossTextMarginL     = 340;
-    var percentTextMarginL  = 380;        
+    var rankTextMarginL     = boxX + 5;
+    var teamTextMarginL     = boxX + 30;
+    var winTextMarginL      = boxX + 260;
+    var lossTextMarginL     = boxX + 300;
+    var percentTextMarginL  = boxX + 340;
+    gamesBackTextMarginL    = boxX + 400;        
 
     // Date box
     var dateBoxHeight       = 45;
@@ -81,7 +85,7 @@
 
     // Date field
     var dateFieldY          = SVG_INNER_HEIGHT + 65;
-    var dateFieldMarginL    = 5;
+    var dateFieldMarginL    = boxX + 5;
 
 
 
@@ -132,7 +136,6 @@
                             .attr("width", boxWidth).attr("height", boxHeight)
                             .attr("x", boxX).attr("y", boxY);
 
-
         // Add rank text elements to the box for each team
         // Using the .5 calculation to hit the middle of the line
         var rankGroup = focus.append("g").attr("class", "rank-group");        
@@ -174,6 +177,13 @@
             percentGroup.append("text").attr("class", "team-percent").attr("x", x).attr("y", y);
         }
 
+        // Add team name text elements to the box for each team
+        var percentGroup = focus.append("g").attr("class", "games-back-group");
+        for (var i = 1; i <= NUM_TEAMS; i++) {
+            var x = gamesBackTextMarginL;
+            var y = yScale(i + 0.5);
+            percentGroup.append("text").attr("class", "team-games-back").attr("x", x).attr("y", y);
+        }
 
         // Create a rectangular colored box for the tooltip to serve as a background
         focus.append("rect").attr("class", "date-box")
@@ -191,7 +201,7 @@
 
     function buildOverlay(svg, focus, xScale, yScale) {
 
-        var overlay = svg.append("rect").attr("class", "overlay").attr("width", SVG_INNER_WIDTH).attr("height", SVG_INNER_HEIGHT);
+        var overlay = svg.append("rect").attr("class", "overlay").attr("width", OVERLAY_WIDTH).attr("height", OVERLAY_HEIGHT);
         
         // Show tooltip on mouseover of overlay
         overlay.on("mouseover", function() { 
@@ -235,9 +245,11 @@
             
                 var percentString = teamGame.percentage.toFixed(3).toString();
                 focus.select(".percent-group text:nth-child(" + (i).toString() + ")").text(percentString); 
+            
+                var gamesBackString = "5.5"; // teamGame.gamesBack.toFixed(3).toString();
+                focus.select(".games-back-group text:nth-child(" + (i).toString() + ")").text(gamesBackString); 
+            
             }
-
-
 
             // Update the game date at the bottom of the box
             var dateStringFormatter = d3.time.format(TOOLTIP_DATE_FORMAT);
@@ -300,7 +312,9 @@
 
         rawData.forEach(function(team) {
             team.values.forEach(function(dayRecord) {
-                dayRecord.date = dateStringFormatter.parse(dayRecord.date);
+                // Setting dates to noon so game falls in middle of day for UX/UI purposes
+                var noonDate = dateStringFormatter.parse(dayRecord.date);
+                dayRecord.date = d3.time.hour.offset(noonDate, 12);
             });
         });
 
@@ -329,7 +343,7 @@
 
     function drawAxes(svg, xScale, yScale, SVG_INNER_HEIGHT, SVG_INNER_WIDTH) {
 
-        // Draw X Axis
+        // Draw X Axis - TODO: FIGURE OUT BEST WAY TO SHIFT TICKS
         var xAxis = d3.svg.axis().scale(xScale).orient("bottom").ticks(X_AXIS_NUM_TICKS).tickFormat(d3.time.format(X_AXIS_TICK_DATE_FORMAT));
         svg.append("g").attr("class", "x axis").attr("transform", "translate(" + X_AXIS_X + "," + X_AXIS_Y + ")").call(xAxis);
         
@@ -340,7 +354,6 @@
         var yAxis = d3.svg.axis().scale(yScale).orient("left").ticks(Y_AXIS_NUM_TICKS).tickSize(Y_AXIS_TICK_SIZE_INNER, Y_AXIS_TICK_SIZE_OUTER);
         svg.append("g").attr("class", "y axis").call(yAxis);
         
-
         // Add a cutoff line under the 8th position
         var cutoff = svg.select(".y.axis .tick:nth-child(8)").append("line").attr("y1", CUTOFF_Y1).attr("x2", CUTOFF_X2).attr("y2", CUTOFF_Y2); 
 
@@ -455,8 +468,10 @@
         var datesArray = [];
 
         rawData.forEach(function(team) {
-            team.values.forEach(function(v) {
-                datesArray.push(v.date);
+            team.values.forEach(function(val) {
+                // Setting dates to noon so game falls in middle of day for UX/UI purposes
+                var noonDate = d3.time.hour.offset(val.date, 12);
+                datesArray.push(noonDate);
             });
         });
 
