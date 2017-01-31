@@ -5,10 +5,9 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from . import views
 
 urlpatterns = [
-    url(r'cities$', views.cities, name='cities'),
-    url(r'^$', views.index, name='index'),
+    url(r'^(\w+)/(\d{4})/(\w+)/$', views.index, name='index'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
-#urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

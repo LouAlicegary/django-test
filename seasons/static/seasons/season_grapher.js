@@ -8,86 +8,11 @@
  * 
  ******************************************************************************/
 
+
 (function(){
     
     // incomingData is a global that's passed in from the HTML template
     console.log("INCOMING DATA: ", incomingData);
-
-    // General Constants
-    NUM_TEAMS               = incomingData.length;  //15     
-    INCOMING_DATE_FORMAT    = "%Y-%m-%d";
-    TOOLTIP_DATE_FORMAT     = "%B %Y";
-
-    // SVG settings
-    SVG_OUTER_WIDTH         = 7000;
-    SVG_OUTER_HEIGHT        = 750;
-    SVG_MARGINS             = {top: 20, right: 500, bottom: 80, left: 50};
-    SVG_INNER_WIDTH         = SVG_OUTER_WIDTH - SVG_MARGINS.left - SVG_MARGINS.right;   // 6450 (7000 - 50 - 500)
-    SVG_INNER_HEIGHT        = SVG_OUTER_HEIGHT - SVG_MARGINS.top - SVG_MARGINS.bottom;  // 650  (750 - 20 - 80)
-
-    // X Axis - coordinate system starts at (0,0) in top left. that's why x-axis gets translated downward
-    X_AXIS_X                = 0;
-    X_AXIS_Y                = SVG_INNER_HEIGHT;
-    X_AXIS_NUM_TICKS        = 200;
-    X_AXIS_TICK_DATE_FORMAT = "%d";
-
-    // Y Axis - tick size is negative for some unknown reason...i don't get it but that's the only way it works
-    Y_AXIS_NUM_TICKS        = NUM_TEAMS - 1;
-    Y_AXIS_TICK_SIZE_INNER  = -(SVG_INNER_WIDTH);
-    Y_AXIS_TICK_SIZE_OUTER  = 0;
-    Y_AXIS_TICK_TEXT_Y      = 25;
-    
-    // Line Labels
-    LINE_LABEL_X            = 3;
-    LINE_LABEL_DY           = 0.35;    
-
-    // Playoffs cutoff line
-    CUTOFF_X2               = SVG_INNER_WIDTH;
-    CUTOFF_Y1               = 25;
-    CUTOFF_Y2               = 25;
-
-    GAME_DOT_RADIUS         = 10;
-
-    OVERLAY_WIDTH           = SVG_INNER_WIDTH + 50; // TODO: The 50 offsets the line stroke width. Maybe that should be in here?
-    OVERLAY_HEIGHT          = SVG_INNER_HEIGHT;
-
-    // Tooltip graphic
-    var focusHeight         = SVG_INNER_HEIGHT + 80;
-    var focusWidth          = 450;
-    var focusX              = 0;   // L-R from mouse pointer
-    var focusY              = -20; // U-D from top of chart
-
-    // Tooltip focus line
-    var lineHeight          = focusHeight;
-    var lineX               = 0;
-    var lineY1              = 0
-    var lineY2              = lineHeight;
-
-    // Tooltip record box
-    var boxHeight           = focusHeight;
-    var boxWidth            = focusWidth;
-    var boxX                = 20;
-    var boxY                = focusY;
-
-    // Team record
-    var rankTextMarginL     = boxX + 5;
-    var teamTextMarginL     = boxX + 30;
-    var winTextMarginL      = boxX + 260;
-    var lossTextMarginL     = boxX + 300;
-    var percentTextMarginL  = boxX + 340;
-    gamesBackTextMarginL    = boxX + 400;        
-
-    // Date box
-    var dateBoxHeight       = 45;
-    var dateBoxWidth        = boxWidth;
-    var dateBoxX            = boxX;
-    var dateBoxY            = boxHeight - dateBoxHeight;
-
-    // Date field
-    var dateFieldY          = SVG_INNER_HEIGHT + 65;
-    var dateFieldMarginL    = boxX + 5;
-
-
 
     main();
 
@@ -100,7 +25,7 @@
         // TODO: This is only for D3 - more elegant solution possible?
         incomingData = convertDateStringsToDates(incomingData);
 
-        // Sets X value (dates) and Y value (win percentage) scaling functions
+        // Sets X value (dates) and Y value (conference rankings) scaling functions
         var xScale = getXScale(incomingData, SVG_INNER_WIDTH);
         var yScale = getYScale(incomingData, SVG_INNER_HEIGHT);
 
@@ -108,7 +33,7 @@
         svg = drawAxes(svg, xScale, yScale, SVG_INNER_HEIGHT, SVG_INNER_WIDTH);
 
         // Draw the actual lines
-        var lineElements = drawGraphContent(svg, incomingData, xScale, yScale);
+        var lineElements = drawLines(svg, incomingData, xScale, yScale);
 
         drawDots(incomingData, svg, xScale, yScale);
 
@@ -118,173 +43,6 @@
         // Build the tooltip / overlay that shows stats
         buildTooltip(svg, SVG_INNER_WIDTH, SVG_INNER_HEIGHT, xScale, yScale);
         
-    }
-
-
-    function buildTooltip(svg, SVG_INNER_WIDTH, SVG_INNER_HEIGHT, xScale, yScale) {
-
-        // Create a tooltip grouping element and hide contents initially
-        var focus = svg.append("g").attr("class", "focus").style("display", "none");
-        
-        // Create a vertical line to serve as a "day focus"
-        focus.append("line").attr("class", "tooltip-bar")
-                            .attr("x1", lineX).attr("y1", lineY1)
-                            .attr("x2", lineX).attr("y2", lineY2); 
-
-        // Create a rectangular colored box for the tooltip to serve as a background
-        focus.append("rect").attr("class", "tooltip-box")
-                            .attr("width", boxWidth).attr("height", boxHeight)
-                            .attr("x", boxX).attr("y", boxY);
-
-        // Add rank text elements to the box for each team
-        // Using the .5 calculation to hit the middle of the line
-        var rankGroup = focus.append("g").attr("class", "rank-group");        
-        for (var i = 1; i <= NUM_TEAMS; i++) {
-            var x = rankTextMarginL;
-            var y = yScale(i + 0.5);
-            rankGroup.append("text").attr("class", "team-rank").attr("x", x).attr("y", y).text(i.toString());
-        }
-
-        // Add team name text elements to the box for each team
-        var nameGroup = focus.append("g").attr("class", "name-group");
-        for (var i = 1; i <= NUM_TEAMS; i++) {
-            var x = teamTextMarginL;
-            var y = yScale(i + 0.5);
-            nameGroup.append("text").attr("class", "team-record").attr("x", x).attr("y", y);
-        }
-
-        // Add team name text elements to the box for each team
-        var winGroup = focus.append("g").attr("class", "win-group");
-        for (var i = 1; i <= NUM_TEAMS; i++) {
-            var x = winTextMarginL;
-            var y = yScale(i + 0.5);
-            winGroup.append("text").attr("class", "team-wins").attr("x", x).attr("y", y);
-        }
-
-        // Add team name text elements to the box for each team
-        var lossGroup = focus.append("g").attr("class", "loss-group");
-        for (var i = 1; i <= NUM_TEAMS; i++) {
-            var x = lossTextMarginL;
-            var y = yScale(i + 0.5);
-            lossGroup.append("text").attr("class", "team-losses").attr("x", x).attr("y", y);
-        }
-
-        // Add team name text elements to the box for each team
-        var percentGroup = focus.append("g").attr("class", "percent-group");
-        for (var i = 1; i <= NUM_TEAMS; i++) {
-            var x = percentTextMarginL;
-            var y = yScale(i + 0.5);
-            percentGroup.append("text").attr("class", "team-percent").attr("x", x).attr("y", y);
-        }
-
-        // Add team name text elements to the box for each team
-        var percentGroup = focus.append("g").attr("class", "games-back-group");
-        for (var i = 1; i <= NUM_TEAMS; i++) {
-            var x = gamesBackTextMarginL;
-            var y = yScale(i + 0.5);
-            percentGroup.append("text").attr("class", "team-games-back").attr("x", x).attr("y", y);
-        }
-
-        // Create a rectangular colored box for the tooltip to serve as a background
-        focus.append("rect").attr("class", "date-box")
-                            .attr("width", boxWidth).attr("height", dateBoxHeight)
-                            .attr("x", dateBoxX).attr("y", dateBoxY);
-
-        // Add a date field to the box created above        
-        focus.append("text").attr("class", "game-date").attr("x", dateFieldMarginL).attr("y", dateFieldY);
-
-        // put an overlay layer over the entire D3 image that captures all mouse movement
-        buildOverlay(svg, focus, xScale, yScale);    
-
-    }
-
-
-    function buildOverlay(svg, focus, xScale, yScale) {
-
-        var overlay = svg.append("rect").attr("class", "overlay").attr("width", OVERLAY_WIDTH).attr("height", OVERLAY_HEIGHT);
-        
-        // Show tooltip on mouseover of overlay
-        overlay.on("mouseover", function() { 
-            focus.style("display", null); 
-        });
-        
-        // Hide tooltip on mouseout of overlay
-        overlay.on("mouseout", function() { 
-            focus.style("display", "none"); 
-        });
-
-        // Update tooltip as mouse moves through overlay
-        overlay.on("mousemove", function () {
-
-            // Capture current mouse coords
-            var mouseCoords = d3.mouse(this);
-            var mouseX = mouseCoords[0];
-            var mouseY = mouseCoords[1];
-
-            // Use mouse coords to set location of tooltip focus element
-            var xAnchor = mouseX + focusX;
-            var yAnchor = focusY;
-            focus.attr("transform", "translate(" + xAnchor + "," + yAnchor + ")");
-            
-            // Convert current mouse coords to date and rank
-            var date = xScale.invert(mouseX);
-            var ranking = yScale.invert(mouseY);
-
-            // Feed data into the tooltip (skipping two children because they are the line and box)
-            for (var i=1; i <= NUM_TEAMS; i++) {
-                var teamGame = getTeamAndGame(date, i);
-
-                var teamString = teamGame.team.toUpperCase();
-                focus.select(".name-group text:nth-child(" + (i).toString() + ")").text(teamString);
-                
-                var winString = teamGame.win.toString();
-                focus.select(".win-group text:nth-child(" + (i).toString() + ")").text(winString);
-                
-                var lossString = teamGame.loss.toString();
-                focus.select(".loss-group text:nth-child(" + (i).toString() + ")").text(lossString);                
-            
-                var percentString = teamGame.percentage.toFixed(3).toString();
-                focus.select(".percent-group text:nth-child(" + (i).toString() + ")").text(percentString); 
-            
-                var gamesBackString = "5.5"; // teamGame.gamesBack.toFixed(3).toString();
-                focus.select(".games-back-group text:nth-child(" + (i).toString() + ")").text(gamesBackString); 
-            
-            }
-
-            // Update the game date at the bottom of the box
-            var dateStringFormatter = d3.time.format(TOOLTIP_DATE_FORMAT);
-            var dateString = dateStringFormatter(date).toUpperCase();
-            focus.selectAll(".game-date").text(dateString);
-        
-        });
-
-        return overlay;
-
-    }
-
-
-    // Adds a dot to the canvas for each game a team played
-    function drawDots(incomingData, svg, xScale, yScale) {
-
-        playedGameData = incomingData.map(x => ( { name: x.name, values: x.values.filter(y => y.game == 1) } ));
-
-        playedGameData.forEach(function(x, index) {
-            
-            var name = x.name;
-            var values = x.values;
-
-            // Draw a circle on every game in the set
-            svg.selectAll(".team:nth-child(" + index + ")").data(values).enter().append("circle").attr("class", "game-dot")
-                .attr("r", GAME_DOT_RADIUS)
-           .attr("cx", function(d) { 
-                    return xScale(d.date); 
-                })
-                .attr("cy", function(d) { 
-                    return yScale(d.ranking); 
-                });
-
-        });
-
     }
 
 
@@ -302,7 +60,6 @@
         return g;
 
     }
-
 
 
     // Converts date string ("150930") into D3 date format
@@ -362,105 +119,136 @@
     }
 
 
-    function drawGraphContent(svg, rawData, xScale, yScale) {
+    function drawLines(svg, rawData, xScale, yScale) {
 
         // Makes an empty selector
         var emptySelector = svg.selectAll("xxxxxx");
         
-        // Creates one empty <g> element in the SVG per city with a class of "city" and data appended to object
+        // Creates one empty <g> element in the SVG per game with a class of "team" and data appended to object
         var lineElements = emptySelector.data(rawData).enter().append("g").attr("class", "team");
 
-        // Draws a path based on the data specified
-        var lineLabels = rawData.map(x => x.name);
+        // Add a <path> tag to each <g> tag
+        var pathElements = lineElements.append("path").attr("class", "line");
         
-        drawLines(lineElements, xScale, yScale, lineLabels);
+        // Add the path data points via the mapping function
+        pathElements.attr("d", mapLine);
+        
+        // Select the path color based on the mapping function
+        // Maps the names of the cities to the discrete color domain (color can have up to 30 values)  
+        pathElements.style("stroke", mapColor);
 
         return lineElements;
 
 
-        function drawLines(lineElements, xScale, yScale, lineLabels) {
+        // Map the points in the raw data element to points for the line
+        function mapLine(d) {
 
-            // Add a <path> tag to each <g> tag
-            var pathElements = lineElements.append("path").attr("class", "line");
-            
-            // Add the path data points via the mapping function
-            pathElements.attr("d", mapLine);
-            
-            // Select the path color based on the mapping function
-            // Maps the names of the cities to the discrete color domain (color can have up to 30 values)  
-            pathElements.style("stroke", mapColor);
+            var lineMapping = d3.svg.line().interpolate("linear");            
+            lineMapping.x(mapX);
+            lineMapping.y(mapY);   
 
-            // Put the city name on the end of the line
-            // drawLineLabels(lineElements, xScale, yScale);
+            return lineMapping(d.values);             
 
 
-
-            // Map the points in the raw data element to points for the line
-            function mapLine(d) {
-
-                var lineMapping = d3.svg.line().interpolate("linear");            
-                lineMapping.x(mapX);
-                lineMapping.y(mapY);   
-
-                return lineMapping(d.values);             
-
-
-                // Set up X value mapping function
-                function mapX(d) {
-                    return xScale(d.date);
-                }
-
-                // Set up Y value mapping function
-                function mapY(d) {
-                    return yScale(d.ranking); 
-                }
-
+            // Set up X value mapping function
+            function mapX(d) {
+                return xScale(d.date);
             }
 
-
-            // Map the city name to a color pair
-            function mapColor(d) {
-
-                var filteredSet = teamObject.filter(x => x["name"] == d.name);
-
-                if (filteredSet.length == 1 && filteredSet[0]["color1"] && filteredSet[0]["color2"]) {
-                    var t = textures.lines().thicker().stroke(filteredSet[0]["color1"]).background(filteredSet[0]["color2"]);
-                    svg.call(t);
-                    return t.url();
-                } 
-
-                var colorMapping = d3.scale.category20();
-                colorMapping.domain(lineLabels); 
-     
-                return colorMapping(d.name); 
-     
-            }
-
-
-            // Adds name of the city to the end of each line
-            // TODO: Get rid of em calculation
-            function drawLineLabels(lineElements, xScale, yScale) {
-
-                var lineTerminals = lineElements.datum(function(d) { 
-                    return {name: d.name, value: d.values[d.values.length - 1]}; 
-                }).append("text");
-                
-                lineTerminals.attr("transform", function(d) { 
-                    return "translate(" + xScale(d.value.date) + "," + yScale(d.value.ranking) + ")"; 
-                });
-                
-                var dy = LINE_LABEL_DY.toString() + "em";
-                lineTerminals.attr("x", LINE_LABEL_X).attr("dy", dy).attr("class", "label")
-                
-                lineTerminals.text(function(d) { 
-                    return d.name; 
-                });
-
+            // Set up Y value mapping function
+            function mapY(d) {
+                return yScale(d.ranking); 
             }
 
         }
 
+
+        // Map the city name to a color pair
+        function mapColor(d) {
+
+            var filteredSet = teamObject.filter(x => x["name"] == d.name);
+
+            if (filteredSet.length == 1 && filteredSet[0]["color1"] && filteredSet[0]["color2"]) {
+                var t = textures.lines().thicker().stroke(filteredSet[0]["color1"]).background(filteredSet[0]["color2"]);
+                svg.call(t);
+                return t.url();
+            } 
+
+            var colorMapping = d3.scale.category20();
+            colorMapping.domain(lineLabels); 
+ 
+            return colorMapping(d.name); 
+ 
+        }
+
+
     }
+
+
+    // Adds a dot to the canvas for each game a team played
+    function drawDots(incomingData, svg, xScale, yScale) {
+
+        playedGameData = incomingData.map(x => ( { name: x.name, values: x.values.filter(y => y.game == 1) } ));
+
+        playedGameData.forEach(function(x, index) {
+            
+            var name = x.name;
+            var values = x.values;
+
+            // Debug values that are associated with a given game
+            console.log("Team = " + name + " -> Values array: ", values);
+
+            // Draw a circle on every game in the set - this is the blank (white) background to cover transparency
+            drawDotsAsCircles(svg, values, index, "#FFF");
+
+            // Then draw the logo itself
+            drawDotsAsImages(svg, values, index);
+
+        });
+
+
+        function drawDotsAsCircles(svg, values, index, color) {
+
+            // Makes an empty selector
+            var emptySelector = svg.selectAll("xxxxxx");
+
+            //svg.selectAll(".team:nth-child(" + index + ")").data(values).enter().append("circle").attr("class", "game-dot")
+            emptySelector.data(values).enter().append("circle").attr("class", "game-dot")
+                .attr("r", GAME_DOT_RADIUS)
+                .attr("cx", function(d) { 
+                    return xScale(d.date); // + GAME_DOT_OFFSET; 
+                })
+                .attr("cy", function(d) { 
+                    return yScale(d.ranking); 
+                })
+                .style("fill", color);
+
+        }
+
+
+        function drawDotsAsImages(svg, values, index) {
+
+            // Makes an empty selector
+            var emptySelector = svg.selectAll("xxxxxx");
+
+            //svg.selectAll(".team:nth-child(" + index + ")").data(values).enter().append("svg:image")
+            emptySelector.data(values).enter().append("svg:image")
+                .attr("xlink:href", function(d) {
+                    return teamObject.filter((n) => n.name === d.team)[0].logo;
+                })
+                .attr("width", GAME_DOT_RADIUS * 2)
+                .attr("height", GAME_DOT_RADIUS * 2)              
+                .attr("x", function(d) { 
+                    return xScale(d.date) - GAME_DOT_RADIUS; // + GAME_DOT_OFFSET; 
+                })
+                .attr("y", function(d) { 
+                    return yScale(d.ranking) - GAME_DOT_RADIUS; 
+                });
+
+        }
+
+    }
+
 
 
     function getXScale(rawData, SVG_INNER_WIDTH) {
@@ -470,7 +258,7 @@
         rawData.forEach(function(team) {
             team.values.forEach(function(val) {
                 // Setting dates to noon so game falls in middle of day for UX/UI purposes
-                var noonDate = d3.time.hour.offset(val.date, 12);
+                var noonDate = d3.time.hour.offset(val.date, -12);
                 datesArray.push(noonDate);
             });
         });
@@ -488,47 +276,24 @@
 
     function getYScale(rawData, SVG_INNER_HEIGHT) {
 
-        var minPct = d3.min(rawData, function(team) { 
+        var minRank = d3.min(rawData, function(team) { 
             return d3.min(team.values, function(v) { 
                 return v.ranking; 
             }); 
         });
 
-        var maxPct = d3.max(rawData, function(team) { 
+        var maxRank = d3.max(rawData, function(team) { 
             return d3.max(team.values, function(v) { 
                 return v.ranking; 
             }); 
         });
 
         var yScale = d3.scale.linear();
-        yScale.domain([minPct, maxPct]);
+        yScale.domain([minRank, maxRank]);
         yScale.range([0, SVG_INNER_HEIGHT]);
 
         return yScale;
         
-    }
-
-
-    function getTeamAndGame(mouseDate, mouseRank) {
-
-        var dateStringFormatter = d3.time.format(INCOMING_DATE_FORMAT);
-        var dateString = dateStringFormatter(mouseDate);
-
-        var ranking = Math.round(mouseRank);
-
-        var clickedTeamGame;
-
-        for (var index in incomingData) {
-            team = incomingData[index];
-            clickedTeamGame = team.values.filter( v => (v.date == dateString) && (v.ranking == ranking) ); 
-            if (clickedTeamGame.length == 1) {
-                clickedTeamGame = clickedTeamGame[0];
-                break;
-            }
-        }
-        
-        return clickedTeamGame;
-    
     }
 
 

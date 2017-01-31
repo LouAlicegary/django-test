@@ -85,7 +85,7 @@ body {
     fill: darkslategray;
 }
 
-.focus .team-rank{
+.focus .team-rank {
     font-size: 14px;
     fill: pink;
     opacity: 1;    

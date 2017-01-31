@@ -20,13 +20,12 @@ class D3Adapter(object):
     
 
     @staticmethod
-    def shoehornData(dailyRecordList, gameDetailsList):
+    def shoehornData(dailyRecordList, gameDetailsList, league):
 
+        print "[" + str(datetime.now().time()) + "] *** Converting Data for D3 ***"
         shoehornedTeams = D3Adapter.__convertStructureForD3(dailyRecordList)        
-        shoehornedTeams = D3Adapter.__interpolateAcrossDates(shoehornedTeams)
-        shoehornedTeams = D3Adapter.__filterTeams(shoehornedTeams)
-        print len(shoehornedTeams)
-        showhornedTeams = D3Adapter.__rankByDate(shoehornedTeams, gameDetailsList)
+        shoehornedTeams = D3Adapter.__filterTeams(shoehornedTeams, league)
+        print "[" + str(datetime.now().time()) + "] *** Finished Converting Data for D3 ***"
 
         return shoehornedTeams
 
@@ -65,10 +64,10 @@ class D3Adapter(object):
     Filters out teams before ranking them (e.g. by conference or division)
     """
     @staticmethod
-    def __filterTeams(shoehornedTeams):    
+    def __filterTeams(shoehornedTeams, league):    
 
         def filterFunc(x):
-            teamObjectsToMatch = filter(lambda x: x["conference"] == "Eastern", Team.teamObject)
+            teamObjectsToMatch = filter(lambda x: x["conference"] == league, Team.teamObject)
             teamsToMatch = map(lambda x: x["name"], teamObjectsToMatch)
             if x["name"] in teamsToMatch:
                 return True
@@ -77,60 +76,5 @@ class D3Adapter(object):
         filteredTeams = filter(filterFunc, shoehornedTeams)
 
         return filteredTeams
-
-
-    """
-    If it comes across a stubbed zeroed-out record (not a legit one early in the season) 
-    we just take on the previous record's values
-    """
-    @staticmethod
-    def __interpolateAcrossDates(shoehornedTeams):
-
-        for team in shoehornedTeams:
-            
-            flag = 0
-            
-            for counter, game in enumerate(team["values"]):
-                
-                if game["total"] > 0: 
-                    flag = 1
-                
-                if (flag == 1) and (game["total"] == 0):
-                    game["total"] = team["values"][counter-1]["total"]
-                    game["win"] = team["values"][counter-1]["win"]
-                    game["loss"] = team["values"][counter-1]["loss"]
-                    game["percentage"] = team["values"][counter-1]["percentage"]
-                    game["ranking"] = team["values"][counter-1]["ranking"]
-
-        return shoehornedTeams
-
-
-    """
-    Compute daily rankings for an array of shoehorned teams
-    """
-    @staticmethod
-    def __rankByDate(shoehornedTeams, gameDetailsList):
-
-        gameDates = Game.getAllGameDates(gameDetailsList)
-
-        for date in gameDates:
-            
-            dateString = date.strftime("%Y-%m-%d")
-
-            someList = []
-            
-            for team in shoehornedTeams:
-                item = filter(lambda x: x["date"] == dateString, team["values"])
-                someList.extend(item)
-            
-            someList = sorted(someList, key=lambda x: -x["percentage"])
-
-            #pdb.set_trace()
-
-            for counter,team in enumerate(someList):
-                team["ranking"] = counter + 1
-         
-
-        return shoehornedTeams
 
 

@@ -8,7 +8,7 @@
 
     <head>
 
-        <title>NBA 2015-2016 Rankings</title>
+        <title>{{fullTitle|safe}} Rankings</title>
         <meta charset="utf-8">
 
         <!-- Load all Stylesheets here -->
@@ -32,6 +32,15 @@
 <script src="{% static 'seasons/textures.js' %}"></script>
 
 <!-- Need to pass JSON data payload from backend into page -->
-<script> var incomingData = {{jsonData|safe}}; </script>
+<script> 
+    var incomingData  = {{jsonData|safe}}; 
+    var sport         = {{sport|safe}}; 
+    var season        = {{season|safe}}; 
+    var league        = {{league|safe}}; 
+</script>
+
+
+<script src="{% static 'seasons/constants.js' %}"></script>
 <script src="{% static 'seasons/teams.js' %}"></script>
+<script src="{% static 'seasons/stats_overlay.js' %}"></script>
 <script src="{% static 'seasons/season_grapher.js' %}"></script>
